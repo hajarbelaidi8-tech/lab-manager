@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Conventions & Partenaires - LIAS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{layout/navbar :: menu}"></div>
+
+<div class="main-content">
+    <div class="card p-4 border-0 shadow-sm bg-white">
+        <h3 class="fw-bold mb-4 text-dark"><i class="fa-solid fa-file-contract me-2 text-primary"></i>Conventions & Partenariats</h3>
+
+        <div class="row">
+            <div class="col-lg-4" sec:authorize="hasRole('DIRECTEUR')">
+                <!-- PARTENAIRE -->
+                <div class="card p-4 border shadow-sm mb-4">
+                    <h5 class="fw-bold mb-3">Ajouter un Partenaire</h5>
+                    <form th:action="@{/gouvernance/partenaires/ajouter}" method="post">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Nom</label>
+                            <input type="text" name="nom" class="form-control" placeholder="Ex: Université de Paris" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Type</label>
+                            <select name="type" class="form-select">
+                                <option value="ACADEMIQUE">Académique</option>
+                                <option value="INDUSTRIEL">Industriel</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Pays</label>
+                            <input type="text" name="pays" class="form-control" placeholder="Ex: France">
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100"><i class="fa-solid fa-plus me-2"></i>Ajouter</button>
+                    </form>
+                </div>
+
+                <!-- CONVENTION -->
+                <div class="card p-4 border shadow-sm mb-4 bg-light">
+                    <h5 class="fw-bold mb-3">Créer une Convention</h5>
+                    <form th:action="@{/gouvernance/conventions/creer}" method="post" enctype="multipart/form-data">
+                        <div class="mb-2">
+                            <label class="form-label small fw-bold">Titre</label>
+                            <input type="text" name="titre" class="form-control form-control-sm" required>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small fw-bold">Partenaire</label>
+                            <select name="partenaire.id" class="form-select form-select-sm">
+                                <option th:each="p : ${partenaires}" th:value="${p.id}" th:text="${p.nom}"></option>
+                            </select>
+                        </div>
+                        <div class="row g-2 mb-2">
+                            <div class="col-6">
+                                <label class="form-label small fw-bold">Début</label>
+                                <input type="date" name="dateSignature" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label small fw-bold">Fin</label>
+                                <input type="date" name="dateFin" class="form-control form-control-sm">
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small fw-bold">Budget (€)</label>
+                            <input type="number" name="budget" class="form-control form-control-sm">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Contrat (PDF)</label>
+                            <input type="file" name="file" class="form-control form-control-sm">
+                        </div>
+                        <button type="submit" class="btn btn-dark w-100 btn-sm">Enregistrer Convention</button>
+                    </form>
+                </div>
+            </div>
+
+            <div th:class="${#authorization.expression('hasRole(''DIRECTEUR'')')} ? 'col-lg-8' : 'col-12'">
+                <div class="card p-0 border shadow-sm overflow-hidden">
+                    <div class="card-header bg-light py-3">
+                        <h5 class="fw-bold mb-0">Liste des Conventions Actives</h5>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Titre de la Convention</th>
+                                    <th>Partenaire</th>
+                                    <th>Échéance</th>
+                                    <th>Budget</th>
+                                    <th>Document</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="c : ${conventions}">
+                                    <td th:text="${c.titre}" class="fw-bold text-primary"></td>
+                                    <td>
+                                        <i class="fa-solid fa-building me-2 text-muted"></i>
+                                        <span th:text="${c.partenaire.nom}"></span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-light text-dark border" th:text="${c.dateFin != null ? #temporals.format(c.dateFin, 'dd/MM/yyyy') : 'N/A'}"></span>
+                                    </td>
+                                    <td class="fw-bold text-success" th:text="${#numbers.formatDecimal(c.budget, 0, 'WHITESPACE', 0, 'POINT') + ' €'}"></td>
+                                    <td>
+                                        <a th:if="${c.document != null}" th:href="@{'/api/files/view?path=' + ${c.document.cheminFichier}}" class="btn btn-sm btn-outline-danger" target="_blank">
+                                            <i class="fa-solid fa-file-pdf"></i> PDF
+                                        </a>
+                                        <span th:if="${c.document == null}" class="text-muted small">Aucun</span>
+                                    </td>
+                                </tr>
+                                <tr th:if="${conventions == null || conventions.isEmpty()}">
+                                    <td colspan="5" class="text-center py-4 text-muted">Aucune convention enregistrée.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

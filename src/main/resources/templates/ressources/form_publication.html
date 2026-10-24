@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Gérer la Publication - LIAS Lab</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{layout/navbar :: menu}"></div>
+
+<div class="main-content">
+    <div class="row justify-content-center">
+        <div class="col-md-9">
+            <div class="card border-0 shadow-lg">
+                <div class="card-header bg-success text-white py-3">
+                    <h4 class="mb-0">
+                        <i class="fa-solid fa-book-medical me-2"></i>
+                        <span th:text="${publication.id == null ? 'Ajouter une Publication' : 'Modifier la Publication'}">Ajouter</span>
+                    </h4>
+                </div>
+                <div class="card-body p-5">
+                    <form th:action="${publication.id == null ? '/publications/enregistrer' : '/publications/update'}"
+                          th:object="${publication}" method="post" enctype="multipart/form-data">
+
+                        <input type="hidden" th:field="*{id}">
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Titre de la publication</label>
+                            <input type="text" th:field="*{titre}" class="form-control form-control-lg" required>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Revue / Conférence</label>
+                                <input type="text" th:field="*{revue}" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Date de publication</label>
+                                <input type="date" th:field="*{datePublication}" class="form-control" required>
+                            </div>
+                        </div>
+
+                        <!-- SECTION CO-AUTEURS (Match-iy f l-blasa s7i7a ⭐) -->
+                        <div class="mb-4 p-4 bg-light rounded-4 border border-success border-opacity-10">
+                            <label class="form-label fw-bold text-success"><i class="fa-solid fa-users me-2"></i>Co-auteurs du laboratoire</label>
+                            <select name="auteurs" class="form-select shadow-none" multiple size="8" required>
+                                <option th:each="m : ${tousLesMembres}"
+                                        th:value="${m.id}"
+                                        th:text="${m.prenom + ' ' + m.nom}"
+                                        th:selected="${publication.auteurs.contains(m)}">
+                                </option>
+                            </select>
+                            <div class="form-text mt-2"><i class="fa-solid fa-circle-info me-1"></i> Maintenez <kbd>CTRL</kbd> pour sélectionner plusieurs noms.</div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Équipe de recherche</label>
+                                <select th:field="*{equipe}" class="form-select" required>
+                                    <option value="">Choisir...</option>
+                                    <option th:each="e : ${equipes}" th:value="${e.id}" th:text="${e.nom}"></option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">DOI (Optionnel)</label>
+                                <input type="text" th:field="*{doi}" class="form-control" placeholder="10.1000/xyz123">
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Document PDF</label>
+                            <input type="file" name="file" class="form-control" accept="application/pdf">
+                            <div th:if="${publication.cheminFichier != null}" class="mt-2 text-muted small italic">
+                                Fichier actuel : <span th:text="${publication.cheminFichier}"></span>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-5 pt-3 border-top">
+                            <a href="/publications" class="btn btn-light border px-4">Annuler</a>
+                            <button type="submit" class="btn btn-success btn-lg px-5 shadow-sm">
+                                <i class="fa-solid fa-check-circle me-2"></i>
+                                <span th:text="${publication.id == null ? 'Publier les travaux' : 'Mettre à jour'}">Publier</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

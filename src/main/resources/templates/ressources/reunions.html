@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Réunions & PV - LIAS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{layout/navbar :: menu}"></div>
+
+<div class="main-content">
+    <!-- SECTION 17 : RÉUNIONS -->
+    <div class="card p-4 border-0 shadow-sm mb-4 bg-white">
+        <h3 class="fw-bold mb-4 text-primary"><i class="fa-solid fa-handshake-simple me-2"></i>Gouvernance : Réunions & PV</h3>
+        
+        <div class="card p-3 border shadow-sm mb-4 bg-light">
+            <h5 class="fw-bold"><i class="fa-solid fa-plus-circle me-2"></i>Programmer une nouvelle réunion</h5>
+            <form th:action="@{/reunions/organiser}" method="post" class="row g-3">
+                <div class="col-md-5">
+                    <input type="text" name="titre" class="form-control" placeholder="Objet de la réunion" required>
+                </div>
+                <div class="col-md-4">
+                    <input type="date" name="dateReunion" class="form-control" required>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary w-100">Programmer</button>
+                </div>
+                <div class="col-12">
+                    <textarea name="ordreDuJour" class="form-control" rows="2" placeholder="Ordre du jour détaillé..."></textarea>
+                </div>
+            </form>
+        </div>
+
+        <table class="table table-hover align-middle border">
+            <thead class="table-dark">
+                <tr>
+                    <th>📅 Date</th>
+                    <th>📌 Objet & Ordre du jour</th>
+                    <th>📄 Procès-Verbal (PV)</th>
+                    <th>⚙️ Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="r : ${reunions}">
+                    <td th:text="${r.dateReunion}" class="fw-bold"></td>
+                    <td>
+                        <div class="fw-bold text-dark" th:text="${r.titre}"></div>
+                        <div class="small text-muted mt-1" style="max-width: 400px;">
+                            <i class="fa-solid fa-list-ul me-1"></i> <span th:text="${r.ordreDuJour}"></span>
+                        </div>
+                    </td>
+                    <td>
+                        <span th:if="${r.pvPath == null}" class="badge rounded-pill bg-warning text-dark">
+                            <i class="fa-solid fa-hourglass-half me-1"></i> En attente de rédaction
+                        </span>
+                        <a th:if="${r.pvPath != null}" th:href="@{/api/files/view(path=${r.pvPath})}" target="_blank" class="btn btn-sm btn-success rounded-pill">
+                            <i class="fa-solid fa-file-contract me-1"></i> Consulter le PV
+                        </a>
+                    </td>
+                    <td>
+                        <div th:if="${r.pvPath == null && r.pv == null}" sec:authorize="hasRole('DIRECTEUR')">
+                            <form th:action="@{/reunions/pv/upload}" method="post" enctype="multipart/form-data" class="d-flex gap-1">
+                                <input type="hidden" name="reunionId" th:value="${r.id}">
+                                <div class="input-group input-group-sm">
+                                    <input type="file" name="file" class="form-control" required>
+                                    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-upload"></i></button>
+                                </div>
+                            </form>
+                        </div>
+                        <span th:if="${r.pvPath != null || r.pv != null}" class="text-success small fw-bold">
+                            <i class="fa-solid fa-check-double me-1"></i> Archivé
+                        </span>
+                    </td>
+                </tr>
+                <tr th:if="${reunions.isEmpty()}">
+                    <td colspan="4" class="text-center py-4 text-muted">Aucune réunion enregistrée.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>

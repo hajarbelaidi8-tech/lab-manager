@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Gestion des Demandes - LIAS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{layout/navbar :: menu}"></div>
+
+<div class="main-content">
+    <!-- SECTION 6 : ADHÉSIONS -->
+    <div class="card p-4 border-0 shadow-sm mb-5 bg-white">
+        <h3 class="fw-bold mb-4 text-primary"><i class="fa-solid fa-user-plus me-2"></i>Demandes d'Adhésion</h3>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                <tr>
+                    <th>Candidat</th> 
+                    <th>Email</th> 
+                    <th>Dossier</th> 
+                    <th>Équipe Cible</th> 
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="d : ${demandes}" th:if="${!d.traitee}">
+                    <td>
+                        <span th:text="${d.nom + ' ' + d.prenom}" class="fw-bold"></span>
+                        <br><small class="text-muted" th:text="${#temporals.format(d.dateDemande, 'dd/MM/yyyy')}"></small>
+                    </td>
+                    <td th:text="${d.email}"></td>
+                    <td>
+                        <!-- LIEN VERS LE CV (Section 6) -->
+                        <a th:if="${d.cvPath != null}" th:href="@{'/api/files/view?path=' + ${d.cvPath}}" target="_blank" class="btn btn-sm btn-outline-info rounded-pill">
+                            <i class="fa-solid fa-file-pdf me-1"></i> CV
+                        </a>
+                        <button type="button" class="btn btn-sm btn-link text-decoration-none" data-bs-toggle="tooltip" th:title="${d.motivation}">
+                            <i class="fa-solid fa-message"></i> Motivation
+                        </button>
+                    </td>
+                    <td th:text="${d.equipeCible != null ? d.equipeCible.nom : 'Non spécifiée'}"></td>
+                    <td>
+                        <div class="d-flex gap-2">
+                            <form th:action="@{/directeur/demandes/accepter}" method="post" style="display:inline;">
+                                <input type="hidden" name="demandeId" th:value="${d.id}">
+                                <button type="submit" class="btn btn-sm btn-success rounded-circle" title="Accepter et créer compte">
+                                    <i class="fa-solid fa-check"></i>
+                                </button>
+                            </form>
+                            <form th:action="@{/directeur/demandes/refuser}" method="post" style="display:inline;">
+                                <input type="hidden" name="demandeId" th:value="${d.id}">
+                                <button type="submit" class="btn btn-sm btn-danger rounded-circle" title="Refuser">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                <tr th:if="${demandes.isEmpty() || #lists.isEmpty(demandes.?[!traitee])}">
+                    <td colspan="5" class="text-center text-muted py-4">Aucune demande en attente.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- SECTION 15 : BESOINS MATÉRIEL -->
+    <div class="card p-4 border-0 shadow-sm bg-white">
+        <h3 class="fw-bold mb-4 text-warning"><i class="fa-solid fa-truck-ramp-box me-2"></i>Demandes de Matériel</h3>
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+            <tr>
+                <th>Demandeur</th> <th>Matériel</th> <th>Motif</th> <th>Date</th> <th>Décision</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="dm : ${demandesMateriel}" th:if="${dm.statut == 'EN_ATTENTE'}">
+                <td th:text="${dm.demandeur.nom + ' ' + dm.demandeur.prenom}"></td>
+                <td th:text="${dm.materiel != null ? dm.materiel.designation : 'Matériel non spécifié'}" class="fw-bold"></td>
+                <td th:text="${dm.motif}"></td>
+                <td th:text="${dm.dateDemande}"></td>
+                <td>
+                    <div class="d-flex gap-1">
+                        <form th:action="@{/directeur/materiel/valider}" method="post">
+                            <input type="hidden" name="demandeId" th:value="${dm.id}">
+                            <input type="hidden" name="accepter" value="true">
+                            <button type="submit" class="btn btn-sm btn-outline-success">Accepter</button>
+                        </form>
+                        <form th:action="@{/directeur/materiel/valider}" method="post">
+                            <input type="hidden" name="demandeId" th:value="${dm.id}">
+                            <input type="hidden" name="accepter" value="false">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Refuser</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            <tr th:if="${demandesMateriel == null || demandesMateriel.isEmpty() || #lists.isEmpty(demandesMateriel.?[statut == 'EN_ATTENTE'])}">
+                <td colspan="5" class="text-center text-muted py-4">Aucune demande de matériel.</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+</script>
+</body>
+</html>

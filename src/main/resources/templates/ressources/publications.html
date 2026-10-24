@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Publications - LIAS Lab</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{layout/navbar :: menu}"></div>
+
+<div class="main-content">
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show border-0 shadow-sm rounded-xl mb-4" role="alert">
+        <i class="fa-solid fa-triangle-exclamation me-2"></i>
+        <span th:text="${error}">Message d'erreur</span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="fw-bold mb-0"><i class="fa-solid fa-book-journal-whills me-2 text-success"></i>Production Scientifique</h3>
+        <a th:if="${currentUser?.statut == T(ma.fsm.lab_manager.entities.StatutMembre).DOCTORANT || currentUser?.statut == T(ma.fsm.lab_manager.entities.StatutMembre).PERMANENT || currentUser?.statut == T(ma.fsm.lab_manager.entities.StatutMembre).ASSOCIE}"
+           href="/publications/nouveau" class="btn btn-success rounded-pill shadow-sm">
+            <i class="fa-solid fa-plus me-1"></i> Ajouter une Publication
+        </a>
+    </div>
+
+    <!-- FILTRES -->
+    <div class="card border-0 shadow-sm p-4 mb-4 bg-light">
+        <form th:action="@{/publications}" method="get" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label small fw-bold">Auteur</label>
+                <select name="auteurId" class="form-select form-select-sm">
+                    <option value="">Tous les auteurs</option>
+                    <option th:each="a : ${auteurs}" th:value="${a.id}" th:text="${a.prenom + ' ' + a.nom}" th:selected="${param.auteurId != null && param.auteurId[0] == a.id.toString()}"></option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-bold">Équipe</label>
+                <select name="equipeId" class="form-select form-select-sm">
+                    <option value="">Toutes les équipes</option>
+                    <option th:each="e : ${equipes}" th:value="${e.id}" th:text="${e.nom}" th:selected="${param.equipeId != null && param.equipeId[0] == e.id.toString()}"></option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-bold">Année</label>
+                <select name="annee" class="form-select form-select-sm">
+                    <option value="">Toutes les années</option>
+                    <option th:each="y : ${#numbers.sequence(2020, 2026)}" th:value="${y}" th:text="${y}" th:selected="${param.annee != null && param.annee[0] == y.toString()}"></option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary btn-sm w-100"><i class="fa-solid fa-filter"></i> Filtrer</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-4" th:each="p : ${publications}">
+            <div class="card border-0 shadow-sm h-100 p-4 bg-white">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25"
+                          th:text="${p.equipe != null ? p.equipe.acronyme : 'LABO'}">EQUIPE</span>
+                    <small class="text-muted" th:text="${#temporals.format(p.datePublication, 'dd/MM/yyyy')}"></small>
+                </div>
+
+                <h5 class="fw-bold mb-2 text-dark" th:text="${p.titre}">Titre</h5>
+                <p class="text-muted small mb-3"><i class="fa-solid fa-microscope me-2"></i><span th:text="${p.revue}">Revue</span></p>
+
+                <!-- SECTION AUTEURS NQIYA ⭐ -->
+                <div class="mb-4">
+                    <small class="text-muted d-block mb-2 fw-bold small uppercase tracking-wider">Contributeurs :</small>
+                    <div class="d-flex flex-wrap gap-1">
+                        <span th:each="author : ${p.auteurs}"
+                              class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-2 py-1"
+                              style="font-size: 0.75rem;">
+                            <i class="fa-solid fa-user-feather me-1"></i>
+                            <span th:text="${author.prenom + ' ' + author.nom}"></span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mt-auto pt-3 border-top">
+                    <a th:href="@{'/publication/' + ${p.id}}" class="btn btn-sm btn-outline-success rounded-pill px-3">
+                        <i class="fa-solid fa-eye me-1"></i> Détails
+                    </a>
+
+                    <!-- ACTIONS DIRECTEUR ⭐ -->
+                    <div sec:authorize="hasRole('DIRECTEUR')" class="d-flex gap-1">
+                        <a th:href="@{'/publications/modifier/' + ${p.id}}" class="btn btn-sm btn-primary rounded-circle" title="Modifier">
+                            <i class="fa-solid fa-pencil"></i>
+                        </a>
+                        </div>
+                        <div sec:authorize="hasAnyRole('DIRECTEUR', 'ADMIN')" class="d-flex gap-1">
+                        <a th:href="@{'/publications/supprimer/' + ${p.id}}" class="btn btn-sm btn-danger rounded-circle"
+                           onclick="return confirm('Supprimer cette publication ?')">
+                            <i class="fa-solid fa-trash"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div th:if="${publications.isEmpty()}" class="col-12 text-center py-5">
+            <i class="fa-solid fa-book-open fa-3x text-light mb-3 opacity-50"></i>
+            <p class="text-muted">Aucune publication trouvée.</p>
+        </div>
+    </div>
+</div>
+</body>
+</html>

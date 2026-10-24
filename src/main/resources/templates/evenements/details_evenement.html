@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Détails Événement - LIAS Lab</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{layout/navbar :: menu}"></div>
+
+<div class="container py-5">
+    <div class="card shadow-sm border-0 bg-white">
+        <div class="card-body p-5">
+            <div class="d-flex justify-content-between align-items-start mb-4">
+                <div>
+                    <span class="badge bg-success mb-2" th:text="${evenement?.type}">TYPE</span>
+                    <h1 class="fw-bold text-dark" th:text="${evenement?.titre}">Titre</h1>
+                    <p class="text-muted"><i class="fa-solid fa-calendar me-2"></i> Date : <span th:text="${evenement?.dateEvenement != null ? #temporals.format(evenement.dateEvenement, 'dd/MM/yyyy') : 'Date non définie'}">Date</span></p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a sec:authorize="hasRole('DIRECTEUR')" th:href="@{'/evenements/editer/' + ${evenement?.id}}" class="btn btn-primary">Modifier</a>
+                    
+                    <!-- Retour contextuel : Accueil pour visiteur, Liste pour connecté -->
+                    <a sec:authorize="!isAuthenticated()" th:href="@{/}" class="btn btn-outline-secondary">Retour à l'accueil</a>
+                    <a sec:authorize="isAuthenticated()" th:href="@{/evenements}" class="btn btn-outline-secondary">Retour à la liste</a>
+                </div>
+            </div>
+
+            <div class="row mt-5">
+                <div class="col-md-8">
+                    <h5 class="fw-bold border-bottom pb-2 mb-3 text-primary">Description</h5>
+                    <p class="text-secondary" th:text="${evenement?.description}">Description</p>
+                    
+                    <h5 class="fw-bold border-bottom pb-2 mb-3 mt-5 text-primary">Lieu</h5>
+                    <p class="text-secondary" th:text="${evenement?.lieu}">Lieu</p>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card bg-light border-0 p-4">
+                        <h6 class="fw-bold mb-3">Organisateurs</h6>
+                        <ul class="list-unstyled mb-0">
+                            <li th:each="org : ${evenement?.organisateurs}" class="mb-2">
+                                <span th:text="${org?.prenom + ' ' + org?.nom}">Organisateur</span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="card mt-4 border-0 shadow-sm p-4 bg-primary text-white">
+                        <h6 class="fw-bold mb-3">Documents Archivés</h6>
+                        <ul class="list-unstyled small mb-0">
+                            <li th:each="doc : ${evenement?.documents}" class="mb-2">
+                                <a th:href="@{/api/files/view(path=${doc?.cheminFichier})}" target="_blank" class="text-white text-decoration-none">
+                                    <i class="fa-solid fa-download me-1"></i> <span th:text="${doc?.titre}"></span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

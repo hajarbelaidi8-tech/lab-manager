@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Rapport d'Activité - LIAS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <style>
+     @media print {
+        /* Masquer la sidebar, les boutons et les éléments inutiles */
+        .sidebar, .btn, .no-print, form, hr, .top-bar { display: none !important; }
+        
+        /* Forcer le contenu à prendre toute la largeur */
+        .main-content { 
+            margin-left: 0 !important; 
+            padding: 0 !important; 
+            width: 100% !important; 
+            box-shadow: none !important;
+            margin-top: 0 !important;
+        }
+        
+        /* Ajuster les marges de la page */
+        body { background: white !important; }
+        .card { border: none !important; }
+    }
+    </style>
+</head>
+<body>
+<style> @media print { .sidebar, .btn, .no-print, nav, footer { display: none !important; visibility: hidden !important; } .main-content { margin-left: 0 !important; margin: 0 !important; width: 100% !important; border: none !important; } body { background: white !important; } } </style>
+<div th:replace="~{layout/navbar :: menu}" class="no-print"></div>
+
+<div class="main-content">
+    <!-- MESSAGES DE CONFIRMATION -->
+    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show border-0 shadow-sm rounded-4 no-print mb-4" role="alert">
+        <i class="fa-solid fa-circle-check me-2"></i> <span th:text="${successMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show border-0 shadow-sm rounded-4 no-print mb-4" role="alert">
+        <i class="fa-solid fa-triangle-exclamation me-2"></i> <span th:text="${errorMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-4 filters no-print">
+        <h3 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-file-invoice me-2 text-primary"></i>Pilotage du Rapport Annuel</h3>
+        <div class="d-flex gap-2 no-print">
+            <form th:action="@{/rapport}" method="get" class="d-flex gap-2 align-items-center no-print">
+                <select name="annee" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+                    <option th:each="y : ${#numbers.sequence(2024, 2026)}" th:value="${y}" th:text="${y}" th:selected="${rapport.annee == y}"></option>
+                </select>
+            </form>
+            
+            <!-- BOUTON ARCHIVAGE (Section 11) -->
+            <form th:action="@{/rapport/generer}" method="post" class="no-print" sec:authorize="hasRole('DIRECTEUR')">
+                <input type="hidden" name="annee" th:value="${rapport.annee}">
+                <button type="submit" class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm">
+                    <i class="fa-solid fa-box-archive me-1"></i> Archiver ce Rapport
+                </button>
+            </form>
+
+            <button onclick="window.print()" class="btn btn-dark btn-sm btn-print no-print">
+                <i class="fa-solid fa-print me-1"></i> Imprimer
+            </button>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm p-5 bg-white mb-4">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold text-uppercase">Rapport d'Activité Scientifique</h2>
+            <h4 class="text-muted">Laboratoire LIAS - Édition <span th:text="${rapport.annee}">2026</span></h4>
+            <hr class="w-25 mx-auto border-primary border-2 opacity-100">
+        </div>
+
+        <div class="row g-4 mb-5">
+            <div class="col-md-3">
+                <div class="card bg-primary bg-opacity-10 border-0 p-4 text-center">
+                    <h1 class="fw-bold text-primary mb-0" th:text="${rapport.nbMembres}">0</h1>
+                    <p class="text-muted small fw-bold">MEMBRES ACTIFS</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success bg-opacity-10 border-0 p-4 text-center">
+                    <h1 class="fw-bold text-success mb-0" th:text="${rapport.nbPublications}">0</h1>
+                    <p class="text-muted small fw-bold">PUBLICATIONS</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info bg-opacity-10 border-0 p-4 text-center">
+                    <h1 class="fw-bold text-info mb-0" th:text="${rapport.nbEvenements}">0</h1>
+                    <p class="text-muted small fw-bold">ÉVÉNEMENTS</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-dark bg-opacity-10 border-0 p-4 text-center">
+                    <h1 class="fw-bold text-dark mb-0" th:text="${rapport.scorePerformance}">0</h1>
+                    <p class="text-muted small fw-bold">SCORE GLOBAL</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- BILAN DE PERFORMANCE SCIENTIFIQUE (Section 11 ⭐) -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="border-start border-primary border-4 ps-4">
+                    <h5 class="fw-bold text-uppercase text-primary mb-3">Justification Scientifique pour Dotation Budgétaire</h5>
+                    <p class="text-dark">
+                        Le score de performance du laboratoire pour l'année <span th:text="${rapport.annee}"></span> s'établit à 
+                        <strong th:text="${rapport.scorePerformance}"></strong> points. 
+                        Cette productivité, répartie sur <span th:text="${rapport.nbMembres}"></span> chercheurs actifs, justifie le maintien et l'extension des ressources allouées.
+                    </p>
+                    <div class="table-responsive mt-3">
+                        <table class="table table-bordered table-sm text-center">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Indicateur</th>
+                                    <th>Volume</th>
+                                    <th>Pondération</th>
+                                    <th>Total Points</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="text-start ps-3">Publications Indexées</td>
+                                    <td th:text="${rapport.nbPublications}"></td>
+                                    <td>10 pts</td>
+                                    <td class="fw-bold" th:text="${rapport.nbPublications * 10}"></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-start ps-3">Événements Scientifiques</td>
+                                    <td th:text="${rapport.nbEvenements}"></td>
+                                    <td>5 pts</td>
+                                    <td class="fw-bold" th:text="${rapport.nbEvenements * 5}"></td>
+                                </tr>
+                            </tbody>
+                            <tfoot class="table-dark">
+                                <tr>
+                                    <th colspan="3" class="text-end pe-3">SCORE DE PERFORMANCE GLOBAL</th>
+                                    <th th:text="${rapport.scorePerformance}"></th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    <div class="alert alert-light border shadow-sm small mt-3 no-print">
+                        <i class="fa-solid fa-circle-info text-primary me-2"></i>
+                        <strong>Pilotage stratégique :</strong> Ce score est le moteur du cycle de vie budgétaire. Un score élevé permet de solliciter des investissements prioritaires (Serveurs GPU, matériel de mesure, etc.) auprès de l'université.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- INVENTAIRE ET UTILISATION DU PARC MATÉRIEL (Section 11 & 14 ⭐) -->
+        <div class="row mb-5">
+            <div class="col-12">
+                <div class="border-start border-success border-4 ps-4">
+                    <h5 class="fw-bold text-uppercase text-success mb-3">Inventaire et Utilisation du Parc Matériel</h5>
+                    <p class="text-dark">
+                        La dotation budgétaire a permis l'acquisition et le maintien de 
+                        <strong th:text="${rapport.materielTotal}"></strong> actifs technologiques, dont 
+                        <strong th:text="${rapport.materielAffecte}"></strong> sont actuellement affectés en recherche directe.
+                    </p>
+                    <div class="table-responsive mt-3">
+                        <table class="table table-bordered table-sm text-center">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Désignation</th>
+                                    <th>Type</th>
+                                    <th>S/N</th>
+                                    <th>Détenteur actuel</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="m : ${rapport.listeMateriel}">
+                                    <td class="text-start ps-3" th:text="${m.designation}"></td>
+                                    <td th:text="${m.type}"></td>
+                                    <td class="small" th:text="${m.numeroSerie}"></td>
+                                    <td>
+                                        <span th:if="${m.detenteur != null}" th:text="${m.detenteur.prenom + ' ' + m.detenteur.nom}"></span>
+                                        <span th:if="${m.detenteur == null}" class="text-muted italic">En stock</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <h5 class="fw-bold border-bottom pb-2 mb-3">Certification Administrative</h5>
+                <p class="text-secondary small">
+                    Ce document fait foi de mémoire institutionnelle pour le Laboratoire LIAS. 
+                    Toutes les données sont extraites du système central 'Cerveau' et sont certifiées conformes aux activités réelles des chercheurs.
+                </p>
+            </div>
+            <div class="col-md-6 text-end d-flex flex-column justify-content-end">
+                <p class="mb-1 small">Fait à Casablanca, le : <span th:text="${#temporals.format(T(java.time.LocalDate).now(), 'dd MMMM yyyy')}"></span></p>
+                <div class="mt-3">
+                    <p class="fw-bold text-dark mb-0">Signature du Directeur</p>
+                    <p class="text-muted small">Cachet officiel du LIAS</p>
+                    <div class="mt-4" style="height: 60px;"></div> <!-- Espace pour signature -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

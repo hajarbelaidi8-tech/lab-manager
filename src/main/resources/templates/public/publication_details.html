@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${p.titre} + ' - LIAS Lab'">Détails Publication</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50">
+
+<nav class="bg-[#0f172a] py-4 shadow-lg">
+    <div class="container mx-auto px-4 flex justify-between items-center">
+        <a class="text-white text-2xl font-bold" href="/">LIAS <span class="text-emerald-500">Lab</span></a>
+        
+        <!-- Navigation Intelligente -->
+        <a id="backButton" href="/publications" class="text-slate-400 hover:text-white transition-colors text-sm flex items-center">
+            <i class="fa-solid fa-arrow-left me-2"></i> Retour
+        </a>
+        <script>
+            const referrer = document.referrer;
+            const backBtn = document.getElementById('backButton');
+            if (referrer.includes('/evenements/calendrier') || referrer.includes('/evenements')) {
+                backBtn.href = '/evenements/calendrier';
+                backBtn.innerHTML = '<i class="fa-solid fa-arrow-left me-2"></i> Retour à la Timeline';
+            } else if (referrer.includes('/publications')) {
+                backBtn.href = '/publications';
+                backBtn.innerHTML = '<i class="fa-solid fa-arrow-left me-2"></i> Retour aux Publications';
+            } else {
+                backBtn.href = '/';
+                backBtn.innerHTML = '<i class="fa-solid fa-arrow-left me-2"></i> Retour à l\'accueil';
+            }
+        </script>
+    </div>
+</nav>
+
+<div class="container mx-auto px-4 py-12 max-w-4xl">
+    <div class="bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100">
+        <div class="bg-slate-900 p-8 text-white">
+            <div class="flex items-center gap-2 mb-4">
+                <span class="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-xs font-bold uppercase tracking-widest border border-emerald-500/30" th:text="${p.equipe != null ? p.equipe.acronyme : 'Général'}">IA</span>
+                <span class="text-slate-400">•</span>
+                <span class="text-slate-300 text-xs" th:text="${p.revue}">Revue / Journal</span>
+            </div>
+            <h1 class="text-3xl md:text-4xl font-extrabold leading-tight mb-6" th:text="${p.titre}">Titre de la Publication</h1>
+            
+            <div class="flex flex-wrap items-center gap-6 text-sm">
+                <div class="flex items-center gap-3" th:each="author : ${p.auteurs}">
+                    <div class="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center font-bold text-white shadow-lg" th:text="${(author.prenom != null && !author.prenom.isEmpty() ? #strings.substring(author.prenom, 0, 1) : 'A') + (author.nom != null && !author.nom.isEmpty() ? #strings.substring(author.nom, 0, 1) : 'D')}">
+                        AD
+                    </div>
+                    <div>
+                        <p class="text-slate-400 text-[10px] uppercase font-bold tracking-tighter">Auteur</p>
+                        <p class="font-bold" th:text="${(author.prenom ?: '') + ' ' + (author.nom ?: 'Chercheur')}">Nom Auteur</p>
+                    </div>
+                </div>
+                <div class="h-8 w-px bg-slate-700 hidden md:block"></div>
+                <div>
+                    <p class="text-slate-400 text-[10px] uppercase font-bold tracking-tighter">Date de Publication</p>
+                    <p class="font-bold" th:text="${#temporals.format(p.datePublication, 'MMMM yyyy')}">Janvier 2026</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="p-8 md:p-12">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+                <div class="md:col-span-2">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4 flex items-center">
+                        <i class="fa-solid fa-align-left text-emerald-600 me-3"></i>
+                        Résumé des travaux
+                    </h3>
+                    <p class="text-slate-600 leading-relaxed text-lg italic border-l-4 border-slate-100 ps-6 mb-8">
+                        Cette publication traite des avancées majeures réalisées au sein du laboratoire LIAS concernant <span th:text="${p.titre}">ce sujet</span>. 
+                        Elle présente une méthodologie innovante appliquée à l'équipe <span th:text="${p.equipe?.nom}">Recherche</span>.
+                    </p>
+                    
+                    <h3 class="text-xl font-bold text-slate-800 mb-4 flex items-center">
+                        <i class="fa-solid fa-layer-group text-emerald-600 me-3"></i>
+                        Mots Clés & Thématiques
+                    </h3>
+                    <div class="flex flex-wrap gap-2 mb-8">
+                        <span class="px-4 py-2 bg-slate-50 text-slate-600 rounded-xl text-sm border border-slate-100">Intelligence Artificielle</span>
+                        <span class="px-4 py-2 bg-slate-50 text-slate-600 rounded-xl text-sm border border-slate-100">Data Science</span>
+                        <span class="px-4 py-2 bg-slate-50 text-slate-600 rounded-xl text-sm border border-slate-100">Deep Learning</span>
+                        <span class="px-4 py-2 bg-slate-50 text-slate-600 rounded-xl text-sm border border-slate-100" th:text="${p.equipe?.acronyme}">TEAM</span>
+                    </div>
+                </div>
+                
+                <div class="space-y-6">
+                    <!-- Actions d'édition -->
+                    <div th:if="${canEdit}" class="bg-blue-50 p-6 rounded-2xl border border-blue-100">
+                        <h4 class="font-bold text-blue-800 mb-4 flex items-center text-sm">
+                            <i class="fa-solid fa-user-shield me-2"></i> Administration
+                        </h4>
+                        <a th:href="@{'/publications/modifier/' + ${p.id}}" class="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg hover:shadow-blue-200">
+                            <i class="fa-solid fa-pencil"></i>
+                            Modifier la publication
+                        </a>
+                    </div>
+
+                    <div class="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                        <h4 class="font-bold text-slate-800 mb-4 flex items-center text-sm">
+                            <i class="fa-solid fa-download text-emerald-600 me-2"></i>
+                            Ressource PDF
+                        </h4>
+                        <div th:if="${p.cheminFichier != null && !p.cheminFichier.isEmpty()}">
+                            <div th:if="${fileExists}">
+                                <a th:href="@{/api/files/view(path=${p.cheminFichier})}" target="_blank" class="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg hover:shadow-emerald-200">
+                                    <i class="fa-solid fa-file-pdf"></i>
+                                    Ouvrir le PDF
+                                </a>
+                            </div>
+                            <div th:unless="${fileExists}">
+                                <button disabled class="w-full flex items-center justify-center gap-2 bg-amber-100 text-amber-600 font-bold py-3 rounded-xl cursor-not-allowed border border-amber-200">
+                                    <i class="fa-solid fa-triangle-exclamation"></i>
+                                    Fichier manquant
+                                </button>
+                                <p class="text-[9px] text-amber-500 mt-2 text-center">Le document est référencé mais introuvable sur le serveur.</p>
+                            </div>
+                        </div>
+                        <div th:if="${p.cheminFichier == null || p.cheminFichier.isEmpty()}">
+                            <button disabled class="w-full flex items-center justify-center gap-2 bg-slate-200 text-slate-400 font-bold py-3 rounded-xl cursor-not-allowed">
+                                <i class="fa-solid fa-file-circle-xmark"></i>
+                                PDF non disponible
+                            </button>
+                        </div>
+                        <p class="text-center text-[10px] text-slate-400 mt-3 italic">Accès libre - Pilotage LIAS</p>
+                    </div>
+
+                    <div th:if="${p.doi != null}" class="bg-blue-50 p-6 rounded-2xl border border-blue-100 mb-6">
+                        <h4 class="font-bold text-blue-800 mb-2 text-sm">Référence DOI</h4>
+                        <p class="text-blue-700 text-xs break-all" th:text="${p.doi}">10.1000/xyz123</p>
+                        <a th:href="${'https://doi.org/' + p.doi}" target="_blank" class="text-blue-600 font-bold text-xs hover:underline mt-2 inline-block">
+                            Voir sur doi.org <i class="fa-solid fa-external-link ms-1 text-[8px]"></i>
+                        </a>
+                    </div>
+
+                    <div class="bg-emerald-50 p-6 rounded-2xl border border-emerald-100">
+                        <h4 class="font-bold text-emerald-800 mb-2 text-sm">Équipe de Recherche</h4>
+                        <p class="text-emerald-700 text-xs mb-4" th:text="${p.equipe?.description}">Description...</p>
+                        <a th:href="'/equipes/' + ${p.equipe.id} + '?fromPublication=' + ${p.id}" class="text-emerald-600 font-bold text-xs hover:underline flex items-center">
+                            Voir tous les membres <i class="fa-solid fa-chevron-right ms-2 text-[8px]"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer class="bg-slate-900 text-slate-500 py-12 text-center text-sm mt-12">
+    <div class="container mx-auto px-4">
+        <p class="mb-2">&copy; 2026 Laboratoire LIAS - Université Hassan II de Casablanca</p>
+        <p class="opacity-50 tracking-widest uppercase text-[10px]">Traçabilité & Pilotage</p>
+    </div>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Laboratoire LIAS - Accueil</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .hero-section {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: white;
+            padding: 100px 0;
+            text-align: center;
+        }
+
+        .section-title {
+            margin-bottom: 50px;
+            font-weight: bold;
+            color: #0f172a;
+            position: relative;
+            padding-bottom: 15px;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 4px;
+            background-color: #059669;
+        }
+
+        .card {
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: none;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            border-radius: 15px;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-join {
+            background-color: #059669;
+            color: white;
+            padding: 12px 35px;
+            border-radius: 30px;
+            font-weight: bold;
+            text-decoration: none;
+            transition: 0.3s;
+        }
+
+        .btn-join:hover {
+            background-color: #047857;
+            color: white;
+        }
+
+        .navbar {
+            background-color: #0f172a !important;
+            padding: 15px 0;
+        }
+
+        .pub-row:hover {
+            background-color: #f8fafc;
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+    <div class="container">
+        <a class="navbar-brand fw-bold fs-3" href="/">LIAS <span style="color:#059669">Lab</span></a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto align-items-center">
+                <li class="nav-item"><a class="nav-link px-3" href="#presentation">Accueil</a></li>
+                <li class="nav-item"><a class="nav-link px-3" href="#equipes">Équipes</a></li>
+                <li class="nav-item"><a class="nav-link px-3" href="#evenements">Activités</a></li>
+                <li class="nav-item"><a class="nav-link px-3" href="#publications">Publications</a></li>
+
+                <!-- Boutons conditionnels -->
+                <li class="nav-item ms-lg-3" sec:authorize="!isAuthenticated()">
+                    <a href="/login" class="btn btn-outline-light rounded-pill px-4">Connexion</a>
+                </li>
+                <li class="nav-item ms-lg-3" sec:authorize="isAuthenticated()">
+                    <a href="/dashboard" class="btn btn-outline-light rounded-pill px-4">Mon Dashboard</a>
+                </li>
+                <li class="nav-item ms-2" sec:authorize="!isAuthenticated()">
+                    <a href="/postuler" class="btn btn-success rounded-pill px-4"
+                       style="background-color: #059669; border: none; font-weight: bold; box-shadow: 0 4px 10px rgba(5,150,105,0.3);">Postuler</a>
+                </li>
+                <li class="nav-item ms-2" sec:authorize="isAuthenticated()">
+                    <form th:action="@{/logout}" method="post">
+                        <button type="submit" class="btn btn-danger rounded-pill px-4">Déconnexion</button>
+                    </form>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<header class="hero-section">
+    <div class="container">
+        <!-- Message de bienvenue conditionnel (Section 2.1 PDF) -->
+        <div sec:authorize="!isAuthenticated()">
+            <h1 class="display-3 fw-bold mb-4">Bienvenue sur la plateforme du Laboratoire LIAS</h1>
+            <p class="lead mb-5 fs-4 opacity-75">Faculté des Sciences Ben M'Sik - Casablanca</p>
+        </div>
+        <div sec:authorize="isAuthenticated()">
+            <h1 class="display-3 fw-bold mb-4">Bienvenue, <span
+                    th:text="${currentUser?.prenom + ' ' + currentUser?.nom}">Chercheur</span></h1>
+            <p class="lead mb-5 fs-4 opacity-75">Heureux de vous revoir sur votre espace de travail.</p>
+        </div>
+
+        <div class="d-flex justify-content-center gap-3">
+            <a sec:authorize="!isAuthenticated()" href="/postuler" class="btn-join btn-lg">Rejoindre le laboratoire</a>
+            <a sec:authorize="isAuthenticated()" href="/dashboard" class="btn-join btn-lg">Accéder au Dashboard</a>
+            <a href="#presentation" class="btn btn-outline-light btn-lg rounded-pill px-5">En savoir plus</a>
+        </div>
+    </div>
+</header>
+
+<section id="presentation" class="py-5">
+    <div class="container py-5">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h2 class="section-title text-start mb-4">Présentation du Laboratoire</h2>
+                <p class="lead">Le laboratoire LIAS est un pôle d'excellence dédié à la recherche en informatique et aux
+                    systèmes d'aide à la décision.</p>
+                <p class="text-muted">Nos travaux couvrent un large spectre allant de l'Intelligence Artificielle au Big
+                    Data, en passant par l'Internet des Objets (IoT) et la cybersécurité.</p>
+                <div class="row mt-4 g-3">
+                    <div class="col-6">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fas fa-check-circle text-success fs-4"></i>
+                            <span class="fw-bold">Recherche de pointe</span>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fas fa-check-circle text-success fs-4"></i>
+                            <span class="fw-bold">Innovation technologique</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6 mt-5 mt-lg-0">
+                <div class="bg-light p-5 rounded-4 shadow-sm border text-center">
+                    <i class="fas fa-microscope text-success mb-4" style="font-size: 5rem;"></i>
+                    <h3 class="fw-bold">LIAS Lab</h3>
+                    <p class="text-muted">Innover pour un avenir intelligent</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="equipes" class="py-5 bg-light">
+    <div class="container">
+        <h2 class="text-center section-title">Nos Équipes de Recherche</h2>
+        <div class="row g-4 mt-2">
+            <!-- On vérifie si equipes existe pour éviter les erreurs de parsing -->
+            <div th:if="${equipes != null}" th:each="e : ${equipes}" class="col-md-6 col-lg-4">
+                <a th:href="@{'/equipes/' + ${e.id}}" class="text-decoration-none h-100 d-block">
+                    <div class="card h-100 p-4 shadow-sm border-0">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <div class="bg-success bg-opacity-10 p-3 rounded-3">
+                                <i class="fas fa-users text-success fs-4"></i>
+                            </div>
+                            <span class="badge bg-secondary rounded-pill" th:text="${e.acronyme}">CODE</span>
+                        </div>
+                        <h5 class="fw-bold mb-3 text-dark" th:text="${e.nom}">Equipe</h5>
+                        <p class="text-muted small mb-0" th:text="${e.description}">Description de l'équipe...</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="evenements" class="py-5">
+    <div class="container">
+        <h2 class="text-center section-title">Nos Événements Scientifiques</h2>
+        <div class="row g-4 mt-2">
+            <div th:if="${evenements != null}" th:each="ev : ${evenements}" class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm rounded-4 overflow-hidden hover-lift transition-all">
+                    <div class="bg-primary bg-opacity-10 p-4 text-center border-bottom">
+                        <i class="fa-solid fa-calendar-check text-primary fs-1 mb-2"></i>
+                        <div class="badge bg-white text-primary border border-primary-subtle rounded-pill px-3 py-2"
+                             th:text="${ev.type}">CONFÉRENCE
+                        </div>
+                    </div>
+                    <div class="card-body p-4">
+                        <h5 class="fw-bold text-dark mb-3" th:text="${ev.titre}">Titre de l'événement</h5>
+                        <div class="d-flex align-items-center text-muted small mb-2">
+                            <i class="fa-solid fa-calendar me-2"></i>
+                            <span th:text="${ev.dateEvenement != null ? #temporals.format(ev.dateEvenement, 'dd MMMM yyyy') : 'Date non définie'}">Date</span>
+                        </div>
+                        <div class="d-flex align-items-center text-muted small mb-4">
+                            <i class="fa-solid fa-location-dot me-2"></i>
+                            <span th:text="${ev.lieu}">Lieu</span>
+                        </div>
+                        <a th:href="@{'/evenements/details/' + ${ev.id}}"
+                           class="btn btn-outline-primary w-100 rounded-pill">Consulter le programme</a>
+                    </div>
+                </div>
+            </div>
+            <div th:if="${#lists.isEmpty(evenements)}" class="col-12 text-center py-5">
+                <p class="text-muted">Aucun événement prévu pour le moment.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="publications" class="py-5">
+    <div class="container">
+        <h2 class="text-center section-title">Dernières Publications</h2>
+        <div class="card shadow-sm border-0 overflow-hidden">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-dark text-white">
+                    <tr>
+                        <th class="py-3 ps-4">Titre de la Publication</th>
+                        <th class="py-3">Journal / Revue</th>
+                        <th class="py-3 text-center">Année</th>
+                        <th class="py-3 pe-4 text-end">Action</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <!-- On vérifie si publications existe -->
+                    <tr th:if="${publications != null}" th:each="p : ${publications}" class="pub-row">
+                        <td class="ps-4">
+                            <div class="fw-bold" th:text="${p.titre}">Titre</div>
+                            <small class="text-muted" th:text="${p.equipe != null ? p.equipe.nom : ''}">Equipe</small>
+                        </td>
+                        <td th:text="${p.revue}">Revue</td>
+                        <td class="text-center">
+                            <!-- Null-check sur la date pour éviter l'erreur 500 -->
+                            <span class="badge bg-light text-dark border"
+                                  th:text="${p.datePublication != null ? #temporals.format(p.datePublication, 'yyyy') : 'N/A'}">2026</span>
+                        </td>
+                        <td class="pe-4 text-end">
+                            <a th:href="@{'/publication/' + ${p.id}}"
+                               class="btn btn-sm btn-outline-success rounded-pill px-4 hover:bg-emerald-600 hover:text-white transition-all"><i
+                                    class="fas fa-eye me-1"></i> Détails</a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+
+<footer class="bg-dark text-white py-5 mt-5">
+    <div class="container text-center">
+        <h4 class="fw-bold mb-4">Laboratoire LIAS</h4>
+        <p class="opacity-50 mb-4">Faculté des Sciences Ben M'Sik, Université Hassan II de Casablanca</p>
+        <hr class="opacity-25 mb-4">
+        <p class="mb-0 opacity-50">&copy; 2026 Laboratoire LIAS - Tous droits réservés.</p>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

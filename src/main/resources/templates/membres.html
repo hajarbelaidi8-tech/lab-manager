@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<!-- Ajoutez xmlns:sec à la fin de la balise html -->
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Chercheurs - LIAS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{layout/navbar :: menu}"></div>
+
+<div class="main-content">
+    <div class="card p-4 border-0 shadow-sm">
+        <div class="d-flex align-items-center mb-4">
+            <a th:if="${isTeamView}" th:href="${#authentication == null or #authentication.name == 'anonymousUser' ? '/' : (fromPublicationId != null ? '/publication/' + fromPublicationId : '/membres')}" 
+               class="btn btn-outline-secondary btn-sm rounded-circle me-3" title="Retour">
+                <i class="fa-solid fa-arrow-left"></i>
+            </a>
+            <h3 class="fw-bold mb-0">
+                <i class="fa-solid fa-users-viewfinder me-2"></i>
+                <span th:if="${isTeamView}" th:text="'Membres de l\'équipe : ' + ${equipe.nom}">Membres de l'équipe</span>
+                <span th:unless="${isTeamView}">Annuaire des Chercheurs</span>
+            </h3>
+        </div>
+        <div th:if="${isTeamView}" class="mb-4">
+            <p class="text-muted"><i class="fa-solid fa-tag me-2"></i><span th:text="${equipe.description}"></span></p>
+        </div>
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+            <tr>
+                <th>Photo</th> <th>Nom & Prénom</th> <th>Statut</th> <th>Rôle</th> <th>Équipe</th> <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="m : ${listeMembres}" th:classappend="${m.statut == T(ma.fsm.lab_manager.entities.StatutMembre).ANCIEN or m.statut == T(ma.fsm.lab_manager.entities.StatutMembre).RETRAITE ? 'membre-gele' : ''}">
+                <td>
+                    <img src="https://ui-avatars.com/api/?name=User" th:src="'https://ui-avatars.com/api/?background=random&color=fff&name=' + ${m?.prenom}" style="width:40px; border-radius:50%;">
+                </td>
+                <td>
+                    <span th:text="${m.nom + ' ' + m.prenom}" class="fw-bold"></span>
+                    <span th:if="${m.statut == T(ma.fsm.lab_manager.entities.StatutMembre).ANCIEN or m.statut == T(ma.fsm.lab_manager.entities.StatutMembre).RETRAITE}" class="badge-inactif ms-2">Inactif</span>
+                    <div th:if="${(m.statut == T(ma.fsm.lab_manager.entities.StatutMembre).ANCIEN || m.statut == T(ma.fsm.lab_manager.entities.StatutMembre).RETRAITE) && !m.materiels.isEmpty()}" 
+                         class="alert alert-danger p-1 mt-1 mb-0 border-0" style="font-size: 0.7rem;">
+                        <i class="fa-solid fa-triangle-exclamation me-1"></i> MATÉRIEL NON RENDU
+                    </div>
+                </td>
+                <td><span class="badge bg-secondary" th:text="${m.statut}"></span></td>
+                <td><span class="badge bg-info text-dark" th:text="${m.role}"></span></td>
+                <td th:text="${m.equipe != null ? m.equipe.nom : '---'}"></td>
+                <!-- Dans le tableau des membres -->
+                <td>
+                    <div class="btn-group">
+                        <!-- Tout le monde peut voir les détails -->
+                        <a th:href="@{'/membres/details/' + ${m.id}}" class="btn btn-sm btn-outline-primary">🔍 Voir</a>
+
+                        <!-- SEUL L'ADMIN peut Modifier ou Supprimer -->
+                        <th:block sec:authorize="hasRole('ADMIN')">
+                            <a th:href="@{'/admin/membres/editer/' + ${m.id}}" class="btn btn-sm btn-outline-warning">✏️ Modifier</a>
+
+                            <a th:href="@{'/admin/membres/supprimer/' + ${m.id}}" class="btn btn-sm btn-outline-danger"
+                               onclick="return confirm('Archiver ce membre ? (Mémoire Institutionnelle : le compte sera marqué comme ANCIEN/RETRAITE mais conservé)')">🗑️ Supprimer</a>
+                        </th:block>
+                    </div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>

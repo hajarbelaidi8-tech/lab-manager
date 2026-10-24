@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Nouvel Événement - LIAS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{layout/navbar :: menu}"></div>
+
+<div class="main-content">
+    <div class="row justify-content-center">
+        <div class="col-md-9">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white py-3">
+                    <h4 class="mb-0"><i class="fa-solid fa-calendar-plus me-2"></i>Organiser un Événement Scientifique</h4>
+                </div>
+                <div class="card-body p-5">
+                    <form th:action="@{/evenements/save}" th:object="${evenement}" method="post" enctype="multipart/form-data">
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Titre de l'événement</label>
+                            <input type="text" th:field="*{titre}" class="form-control form-control-lg" placeholder="Ex: Conférence Internationale sur le Cloud" required>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Type d'activité</label>
+                                <select th:field="*{type}" class="form-select">
+                                    <option value="CONFERENCE">Conférence</option>
+                                    <option value="SEMINAIRE">Séminaire</option>
+                                    <option value="WORKSHOP">Workshop</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Date prévue</label>
+                                <input type="date" th:field="*{dateEvenement}" class="form-control" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Lieu</label>
+                            <input type="text" th:field="*{lieu}" class="form-control" placeholder="Salle, Ville ou Plateforme en ligne">
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Affectation des Organisateurs</label>
+                            <div class="row px-3 py-2 bg-white border rounded" style="max-height: 200px; overflow-y: auto;">
+                                <div th:each="m : ${tousLesMembres}" class="col-md-6 mb-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" th:field="*{organisateurs}" th:value="${m.id}" th:id="${'member' + m.id}">
+                                        <label class="form-check-label small" th:for="${'member' + m.id}" th:text="${m.prenom + ' ' + m.nom}">Membre</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <small class="text-muted">Sélectionnez un ou plusieurs membres pour cette édition.</small>
+                        </div>
+
+                        <div class="mb-5 p-4 bg-light rounded border border-dashed text-center">
+                            <label class="form-label fw-bold text-primary d-block mb-2">📂 Joindre un Document (PV ou Programme)</label>
+                            <input type="file" name="file" class="form-control mx-auto" style="max-width: 400px;">
+                            <small class="text-muted">PDF ou Image, maximum 10Mo.</small>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="/evenements" class="btn btn-light border px-4">Annuler</a>
+                            <button type="submit" class="btn btn-success btn-lg px-5 shadow-sm">Enregistrer et Archiver</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

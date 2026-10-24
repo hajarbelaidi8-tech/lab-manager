@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Profil Membre - LIAS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+<div th:replace="~{layout/navbar :: menu}"></div>
+
+<div class="main-content">
+    <div class="card shadow-sm border-0 bg-white" th:if="${membre != null}">
+        <div class="card-body p-5">
+            <div class="row align-items-center mb-5">
+                <div class="col-md-3 text-center">
+                    <img src="https://ui-avatars.com/api/?name=User" th:src="'https://ui-avatars.com/api/?background=random&color=fff&name=' + ${membre?.prenom}" style="width:180px; border-radius:50%;" class="shadow border border-5 border-white">
+                </div>
+                <div class="col-md-9">
+                    <h1 class="fw-bold mb-1" th:text="${(membre.prenom ?: '') + ' ' + (membre.nom ?: 'Chercheur')}">Nom Prénom</h1>
+                    <p class="badge bg-success fs-6" th:text="${membre.statut ?: 'STATUT'}">STATUT</p>
+                    <p class="text-muted mb-1"><i class="fa-solid fa-envelope me-2"></i><span th:text="${membre.email ?: 'Email non renseigné'}">email@univ.ma</span></p>
+
+                    <p class="text-muted small" sec:authorize="isAuthenticated()" th:if="${#authentication.name == membre.email}">
+                        <i class="fa-solid fa-cake-candles me-2 text-danger"></i>
+                        Né(e) le : <span th:text="${#temporals.format(membre.dateNaissance, 'dd/MM/yyyy') ?: '---'}">---</span>
+                    </p>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 class="fw-bold border-bottom pb-2 mb-3 text-primary">Parcours & Origine</h5>
+                    <p><strong>Établissement d'origine :</strong> <span th:text="${membre.etablissementOrigine ?: '---'}">---</span></p>
+                    <p><strong>Laboratoire d'origine :</strong> <span th:text="${membre.laboratoireOrigine ?: '---'}">---</span></p>
+                    <p><strong>Équipe actuelle :</strong> <span th:text="${membre.equipe?.nom ?: 'Non affectée'}">---</span></p>
+                    <p><strong>Date d'embauche :</strong> <span th:text="${#temporals.format(membre.dateEmbauche, 'dd/MM/yyyy') ?: '---'}">---</span></p>
+                    <p><strong>Date d'affiliation au labo :</strong> <span th:text="${#temporals.format(membre.dateAffiliation, 'dd/MM/yyyy') ?: '---'}">---</span></p>
+                </div>
+                <div class="col-md-6">
+                    <h5 class="fw-bold border-bottom pb-2 mb-3 text-primary">Expertise</h5>
+                    <p><strong>Centres d'intérêt :</strong> <span th:text="${membre.centresInteret ?: 'Non renseignés'}">---</span></p>
+                </div>
+
+                <!-- ⭐ SECTION 4.3 : HISTORIQUE DES AFFILIATIONS ⭐ -->
+                <div class="col-12 mt-4" th:if="${not #lists.isEmpty(membre.affiliations)}">
+                    <h5 class="fw-bold border-bottom pb-2 mb-3 text-primary"><i class="fa-solid fa-timeline me-2"></i>Historique des Affiliations</h5>
+                    <div class="list-group list-group-flush border rounded shadow-sm">
+                        <div class="list-group-item py-3" th:each="aff : ${membre.affiliations}">
+                            <i class="fa-solid fa-building-user text-success me-3"></i>
+                            <span th:text="${'Du ' + #temporals.format(aff.dateDebut, 'dd/MM/yyyy') + (aff.dateFin != null ? ' au ' + #temporals.format(aff.dateFin, 'dd/MM/yyyy') : ' (Actuellement)')}">---</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ⭐ SECTION 5.3 : HISTORIQUE DES MANDATS ⭐ -->
+                <div class="col-12 mt-4" th:if="${not #lists.isEmpty(membre.mandats)}">
+                    <h5 class="fw-bold border-bottom pb-2 mb-3 text-dark">
+                        <i class="fa-solid fa-id-badge me-2 text-info"></i>Périodes de Gouvernance 
+                    </h5>
+                    <div class="list-group list-group-flush border rounded shadow-sm bg-light bg-opacity-10">
+                        <div class="list-group-item py-3" th:each="man : ${membre.mandats}">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="badge bg-info text-dark fw-bold" th:text="${man.typeRole}">ROLE</span>
+                                    <span class="ms-3 text-secondary">Responsabilité Idari-ya</span>
+                                </div>
+                                <small class="text-muted" th:text="${'Du ' + #temporals.format(man.dateDebut, 'dd/MM/yyyy') + (man.dateFin != null ? ' au ' + #temporals.format(man.dateFin, 'dd/MM/yyyy') : ' (Actuellement)')}"></small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-12 mt-4">
+                    <h5 class="fw-bold border-bottom pb-2 mb-3 text-primary">Biographie</h5>
+                    <p class="text-secondary" style="line-height: 1.8;" th:text="${membre.biographie ?: 'Aucune biographie disponible.'}"></p>
+                </div>
+
+                <!-- ⭐ SECTION 12 : PUBLICATIONS SCIENTIFIQUES ⭐ -->
+                <div class="col-12 mt-4">
+                    <h5 class="fw-bold border-bottom pb-2 mb-3 text-primary"><i class="fa-solid fa-book-open me-2"></i>Production Scientifique</h5>
+                    <div class="table-responsive" th:if="${not #lists.isEmpty(membre.publications)}">
+                        <table class="table table-hover align-middle">
+                            <thead class="bg-light">
+                            <tr><th>Titre</th><th>Revue</th><th>Année</th><th>Action</th></tr>
+                            </thead>
+                            <tbody>
+                            <!-- REMPLACE LA LIGNE 116 PAR CELLE-CI -->
+                            <tr th:each="p : ${publications}">
+                                <td class="fw-bold" th:text="${p.titre}">Titre</td>
+                                <td th:text="${p.revue}">Revue</td>
+                                <td th:text="${p.datePublication != null ? #temporals.format(p.datePublication, 'yyyy') : 'N/A'}">2026</td>
+                                <td><a th:href="@{'/publication/' + ${p.id}}" class="btn btn-sm btn-outline-success rounded-pill">Consulter</a></td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="text-muted small italic" th:if="${#lists.isEmpty(membre.publications)}">Aucune publication enregistrée.</p>
+                </div>
+            </div>
+
+            <div class="mt-5 pt-3 border-top d-flex justify-content-between">
+                <a href="/membres" class="btn btn-light"><i class="fa-solid fa-arrow-left me-2"></i>Annuaire</a>
+                <a th:href="@{'/membres/editer/' + ${membre.id}}"
+                   th:if="${#authentication.name == membre.email || #authorization.expression('hasRole(''DIRECTEUR'') or hasRole(''VICE_DIRECTEUR'')')}"
+                   class="btn btn-warning px-4">
+                    <i class="fa-solid fa-user-pen me-2"></i>Modifier ce profil
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="alert alert-danger" th:if="${membre == null}">
+        <h4>Erreur</h4><p>Membre introuvable.</p>
+    </div>
+</div>
+</body>
+</html>

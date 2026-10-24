@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <title>Archives - LIAS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-50">
+<div th:replace="~{layout/navbar :: menu}"></div>
+
+<!-- State for JS -->
+<input type="hidden" id="isAuthenticated" th:value="${#authorization.expression('isAuthenticated()')}">
+<input type="hidden" id="isMember" th:value="${#authorization.expression('hasRole(''MEMBRE'') or hasRole(''DIRECTEUR'')')}">
+
+<div class="main-content p-10">
+    <div class="max-w-6xl mx-auto">
+        <div class="flex items-center justify-between mb-8">
+            <h1 class="text-3xl font-bold text-slate-800 flex items-center">
+                <i class="fa-solid fa-box-archive me-3 text-emerald-600"></i>
+                Archives Documentaires
+            </h1>
+            <div class="bg-white px-4 py-2 rounded-full shadow-sm border flex items-center gap-2">
+                <i class="fa-solid fa-search text-slate-400"></i>
+                <input type="text" id="archiveSearch" placeholder="Rechercher dans les documents..." class="outline-none text-sm w-64">
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <!-- Sidebar: Types de documents -->
+            <div class="md:col-span-1 space-y-4">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-100">
+                    <h3 class="font-bold text-slate-700 mb-4 text-sm uppercase tracking-wider">Filtres Rapides</h3>
+                    <div class="space-y-2" id="filterButtons">
+                        <button onclick="filterDocs('ALL')" class="filter-btn w-full text-left px-4 py-2 rounded-lg bg-emerald-50 text-emerald-700 font-medium text-sm flex items-center">
+                            <i class="fa-solid fa-folder-open me-2"></i> Tous les dossiers
+                        </button>
+                        <button onclick="filterDocs('RAPPORT')" class="filter-btn w-full text-left px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-50 text-sm flex items-center">
+                            <i class="fa-solid fa-file-pdf me-2 text-red-400"></i> Rapports d'Activité
+                        </button>
+                        <button onclick="filterDocs('PV')" class="filter-btn w-full text-left px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-50 text-sm flex items-center">
+                            <i class="fa-solid fa-file-contract me-2 text-blue-400"></i> PV de Réunions
+                        </button>
+                        <button onclick="filterDocs('PUBLICATION')" class="filter-btn w-full text-left px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-50 text-sm flex items-center">
+                            <i class="fa-solid fa-book me-2 text-emerald-400"></i> Publications
+                        </button>
+                        <button onclick="filterDocs('PROGRAMME')" class="filter-btn w-full text-left px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-50 text-sm flex items-center">
+                            <i class="fa-solid fa-calendar-check me-2 text-indigo-400"></i> Événements Scientifiques
+                        </button>
+                        <button onclick="filterDocs('ADMINISTRATIF')" class="filter-btn w-full text-left px-4 py-2 rounded-lg text-slate-600 hover:bg-slate-50 text-sm flex items-center">
+                            <i class="fa-solid fa-file-invoice-dollar me-2 text-amber-400"></i> Documents Administratifs
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main: Explorateur -->
+            <div class="md:col-span-3">
+                <div id="fileExplorer" class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden min-h-[500px]">
+                    <div class="p-6 border-bottom bg-slate-50 flex items-center gap-4 text-slate-500 text-sm">
+                        <span class="hover:text-emerald-600 cursor-pointer" onclick="fetchHierarchy()">Archives</span>
+                        <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                        <span id="currentPath">Racine</span>
+                    </div>
+                    
+                    <div id="explorerContent" class="p-6">
+                        <!-- Content will be injected by JS -->
+                        <div id="spinner" class="flex justify-center py-20">
+                            <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-emerald-600"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let globalData = null;
+
+    async function fetchWithTimeout(resource, options = {}) {
+        const { timeout = 5000 } = options;
+        const controller = new AbortController();
+        const id = setTimeout(() => controller.abort(), timeout);
+        try {
+            const response = await fetch(resource, {
+                ...options,
+                signal: controller.signal
+            });
+            clearTimeout(id);
+            return response;
+        } catch (e) {
+            clearTimeout(id);
+            throw e;
+        }
+    }
+
+    window.fetchHierarchy = async function(type = 'ALL') {
+        const container = document.getElementById('explorerContent');
+        const spinner = document.getElementById('spinner');
+        if (spinner) spinner.style.display = 'flex';
+        
+        console.log(`LOG: Changement de filtre vers ${type}`);
+        document.getElementById('currentPath').innerText = type === 'ALL' ? 'Racine' : `Dossier : ${type}s`;
+
+        try {
+            const url = type === 'ALL' ? '/api/files/hierarchy' : `/api/files/hierarchy?type=${type}`;
+            const response = await fetchWithTimeout(url); 
+            if (!response.ok) throw new Error('Erreur HTTP ' + response.status);
+            
+            const data = await response.json();
+            globalData = data;
+            renderExplorer(data, type);
+        } catch (error) {
+            console.error('Archive Error:', error);
+            let msg = 'Aucun document trouvé (Erreur Réseau)';
+            if (error.name === 'AbortError') msg = 'Délai d\'attente dépassé';
+            
+            container.innerHTML = `
+                <div class="text-center py-20">
+                    <i class="fa-solid fa-folder-open text-slate-300 text-4xl mb-4"></i>
+                    <p class="text-slate-600 font-medium">${msg}</p>
+                    <button onclick="fetchHierarchy()" class="mt-4 px-4 py-2 bg-emerald-600 text-white rounded-full text-xs hover:bg-emerald-700">Réessayer</button>
+                </div>
+            `;
+        } finally {
+            if (spinner) spinner.style.display = 'none';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        fetchHierarchy();
+
+        // Search logic
+        const searchInput = document.getElementById('archiveSearch');
+        if (searchInput) {
+            searchInput.addEventListener('input', async (e) => {
+                const q = e.target.value;
+                if (q.length < 3) {
+                    if (q.length === 0) fetchHierarchy();
+                    return;
+                }
+
+                const container = document.getElementById('explorerContent');
+                const spinner = document.getElementById('spinner');
+                if (spinner) spinner.style.display = 'flex';
+
+                try {
+                    const response = await fetchWithTimeout(`/api/files/search?q=${encodeURIComponent(q)}`);
+                    const results = await response.json();
+                    renderSearchResults(results);
+                } catch (error) {
+                    container.innerHTML = '<div class="text-center py-20 text-red-400">Erreur lors de la recherche.</div>';
+                } finally {
+                    if (spinner) spinner.style.display = 'none';
+                }
+            });
+        }
+    });
+
+    function renderExplorer(data, currentFilter = 'ALL') {
+        const container = document.getElementById('explorerContent');
+        container.innerHTML = '';
+
+        if (Object.keys(data).length === 0) {
+            let emptyMsg = '<div class="text-center py-20"><i class="fa-solid fa-folder-open text-slate-200 text-5xl mb-4"></i><p class="text-slate-400">Aucun document archivé dans cette catégorie.</p>';
+            
+            if (currentFilter === 'RAPPORT' && document.getElementById('isMember').value === 'true') {
+                emptyMsg += `
+                    <div class="mt-6">
+                        <p class="text-xs text-slate-500 mb-3 italic">Le rapport annuel n'est pas encore généré.</p>
+                        <button onclick="generateAnnualReport()" class="px-6 py-3 bg-emerald-600 text-white rounded-xl font-bold shadow-lg shadow-emerald-200 hover:bg-emerald-700 transition-all flex items-center mx-auto">
+                            <i class="fa-solid fa-wand-magic-sparkles me-2"></i> Générer le Rapport Annuel
+                        </button>
+                    </div>`;
+            }
+            
+            emptyMsg += '</div>';
+            container.innerHTML = emptyMsg;
+            return;
+        }
+
+        const years = Object.keys(data).sort().reverse();
+        
+        years.forEach(year => {
+            const yearSection = document.createElement('details');
+            yearSection.className = 'mb-4 group border rounded-xl overflow-hidden shadow-sm';
+            yearSection.innerHTML = `
+                <summary class="list-none p-4 bg-slate-100 cursor-pointer hover:bg-slate-200 flex items-center justify-between transition-all">
+                    <div class="flex items-center font-bold text-slate-800">
+                        <i class="fa-solid fa-calendar-days text-emerald-600 me-3"></i>
+                        Année ${year}
+                    </div>
+                    <i class="fa-solid fa-chevron-down text-slate-400 text-xs transition-transform group-open:rotate-180"></i>
+                </summary>
+                <div class="p-4 bg-white space-y-4">
+                    ${renderEvents(data[year])}
+                </div>
+            `;
+            container.appendChild(yearSection);
+        });
+    }
+
+    window.generateAnnualReport = function() {
+        alert("Lancement de la génération du rapport d'activité consolidé...");
+        // Simulation de génération
+        setTimeout(() => {
+            alert("Rapport généré avec succès ! Il apparaîtra après rafraîchissement.");
+            fetchHierarchy('RAPPORT');
+        }, 1500);
+    }
+
+    window.filterDocs = function(type) {
+        fetchHierarchy(type);
+        
+        // Highlight active button
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.classList.remove('bg-emerald-50', 'text-emerald-700', 'font-medium');
+            btn.classList.add('text-slate-600');
+        });
+        
+        // Use a more robust selector for the active button
+        const buttons = document.querySelectorAll('.filter-btn');
+        buttons.forEach(btn => {
+            if (btn.getAttribute('onclick').includes(`'${type}'`)) {
+                btn.classList.add('bg-emerald-50', 'text-emerald-700', 'font-medium');
+                btn.classList.remove('text-slate-600');
+            }
+        });
+    }
+
+        function renderEvents(events) {
+            return Object.keys(events).map(eventName => `
+                <div class="ml-4 border-l-4 border-emerald-50 pl-4 mb-6">
+                    <h4 class="text-md font-bold text-slate-700 mb-4 flex items-center">
+                        <i class="fa-solid fa-folder-open text-amber-400 me-2"></i>
+                        ${eventName}
+                    </h4>
+                    <div class="space-y-4">
+                        ${renderTypes(events[eventName])}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderTypes(types) {
+            const isMember = document.getElementById('isMember').value === 'true';
+
+            return Object.keys(types).map(type => `
+                <div class="ml-4">
+                    <h5 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3 flex items-center">
+                        <i class="fa-solid fa-tags me-2 opacity-50"></i>
+                        ${type}s
+                    </h5>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        ${types[type].map(doc => {
+                            const hasFile = doc.cheminFichier && doc.cheminFichier !== "null";
+                            let actionHtml = '';
+
+                            if (hasFile) {
+                                const downloadUrl = `/api/files/view?path=${doc.cheminFichier}`;
+                                actionHtml = `
+                                    <div class="overflow-hidden">
+                                        <a href="${downloadUrl}" target="_blank" class="block text-sm font-medium text-slate-700 truncate hover:text-emerald-700">
+                                            ${doc.titre}
+                                        </a>
+                                        <span class="text-[10px] text-slate-400 uppercase tracking-tighter">
+                                            Ajouté le ${new Date(doc.dateUpload).toLocaleDateString()}
+                                        </span>
+                                    </div>`;
+                            } else if (isMember) {
+                                actionHtml = `
+                                    <div class="overflow-hidden">
+                                        <span class="block text-sm font-bold text-amber-600 truncate">${doc.titre}</span>
+                                        <button onclick="triggerUpload(${doc.id})" class="text-[10px] text-emerald-600 font-bold uppercase tracking-tighter hover:underline">
+                                            <i class="fa-solid fa-upload me-1"></i> Uploader le document
+                                        </button>
+                                    </div>`;
+                            } else {
+                                actionHtml = `
+                                    <div class="overflow-hidden">
+                                        <span class="block text-sm font-medium text-slate-400 truncate">${doc.titre}</span>
+                                        <span class="text-[10px] text-slate-400 italic">En attente d'archivage</span>
+                                    </div>`;
+                            }
+
+                            const isAdminDoc = doc.typeDocument === 'ADMINISTRATIF';
+                            const iconClass = isAdminDoc ? 'fa-solid fa-file-invoice-dollar text-amber-500' : 'fa-solid fa-file-pdf';
+                            const bgClass = hasFile ? (isAdminDoc ? 'bg-amber-50' : 'bg-red-50 text-red-500') : 'bg-slate-50 text-slate-300';
+
+                            return `
+                                <div class="flex items-center p-3 rounded-xl border border-slate-100 hover:border-emerald-200 hover:bg-emerald-50 transition-all group">
+                                    <div class="${bgClass} w-10 h-10 rounded-lg flex items-center justify-center me-3 group-hover:scale-110 transition-transform">
+                                        <i class="${iconClass}"></i>
+                                    </div>
+                                    ${actionHtml}
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        window.triggerUpload = function(docId) {
+            // Création d'un input file fantôme pour l'upload rapide
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'application/pdf';
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('documentId', docId);
+
+                try {
+                    const response = await fetch('/api/files/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+                    if (response.ok) {
+                        alert('Document archivé avec succès !');
+                        fetchHierarchy();
+                    } else {
+                        alert('Erreur lors de l\'upload.');
+                    }
+                } catch (error) {
+                    console.error('Upload error:', error);
+                    alert('Erreur réseau.');
+                }
+            };
+            input.click();
+        }
+
+        function renderSearchResults(results) {
+            const container = document.getElementById('explorerContent');
+            document.getElementById('currentPath').innerText = 'Résultats de recherche';
+            
+            if (results.length === 0) {
+                container.innerHTML = '<div class="text-center py-20 text-slate-400">Aucun résultat trouvé.</div>';
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="grid grid-cols-1 gap-3">
+                    ${results.map(doc => {
+                        const hasFile = doc.cheminFichier && doc.cheminFichier !== "null";
+                        const downloadUrl = hasFile ? `/api/files/view?path=${doc.cheminFichier}` : "#";
+
+                        return `
+                            <div class="flex items-center p-4 rounded-xl border border-slate-100 hover:border-emerald-200 hover:bg-emerald-50 transition-all">
+                                <div class="${hasFile ? 'bg-red-50 text-red-500' : 'bg-slate-50 text-slate-300'} w-12 h-12 rounded-xl flex items-center justify-center me-4">
+                                    <i class="fa-solid fa-file-pdf fs-4"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-slate-700">${doc.titre}</h4>
+                                    <p class="text-xs text-slate-500">${doc.typeDocument} • ${doc.evenement ? doc.evenement.titre : 'Archive'}</p>
+                                    ${!hasFile ? '<span class="text-[10px] text-amber-600 font-bold uppercase">En attente d\'archivage</span>' : ''}
+                                </div>
+                                <div class="ms-auto">
+                                    ${hasFile ? `
+                                        <a href="${downloadUrl}" target="_blank" class="px-4 py-2 border border-emerald-600 text-emerald-600 rounded-full text-sm hover:bg-emerald-600 hover:text-white transition-all">
+                                            Ouvrir
+                                        </a>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+</script>
+</body>
+</html>

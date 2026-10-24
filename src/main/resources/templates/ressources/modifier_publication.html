@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Nouvelle Publication - LIAS Lab</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{layout/navbar :: menu}"></div>
+
+<div class="main-content">
+    <div class="row justify-content-center" th:if="${publication != null}">
+        <div class="col-md-9">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-success text-white py-3">
+                    <h4 class="mb-0">
+                        <i class="fa-solid fa-book-medical me-2"></i>
+                        <span th:text="${publication.id == null ? 'Ajouter une Publication Scientifique' : 'Modifier la Publication (Directeur)'}">Ajouter une Publication</span>
+                    </h4>
+                </div>
+                <div class="card-body p-5">
+                    <form th:action="${publication.id == null} ? @{/publications/enregistrer} : @{/publications/update}" th:object="${publication}" method="post" enctype="multipart/form-data">
+                        <input type="hidden" th:field="*{id}">
+                        
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Titre de la publication</label>
+                            <input type="text" th:field="*{titre}" class="form-control form-control-lg" placeholder="Ex: Deep Learning for Smart Cities" required>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Revue / Journal / Conférence</label>
+                                <input type="text" th:field="*{revue}" class="form-control" placeholder="Ex: IEEE Journal, Springer, Nature..." required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Date de publication</label>
+                                <input type="date" th:field="*{datePublication}" class="form-control" required>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Équipe de recherche associée</label>
+                                <select th:field="*{equipe}" class="form-select" required>
+                                    <option value="">Choisir une équipe...</option>
+                                    <option th:each="e : ${equipes}" th:value="${e.id}" th:text="${e.nom}"></option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-bold">Numéro DOI (Digital Object Identifier)</label>
+                                <input type="text" th:field="*{doi}" class="form-control" placeholder="10.1000/xyz123">
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">Fichier PDF de la publication</label>
+                            <input type="file" name="file" class="form-control" accept="application/pdf">
+                            <div th:if="${publication.cheminFichier != null}" class="mt-2 text-info small">
+                                <i class="fa-solid fa-file-pdf"></i> Fichier actuel : <span th:text="${publication.cheminFichier}"></span>
+                            </div>
+                            <small class="text-muted italic">Remplacez le fichier PDF ou laissez vide pour conserver l'actuel.</small>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-5 pt-3 border-top">
+                            <a href="/publications" class="btn btn-light border px-4">Annuler</a>
+                            <button type="submit" class="btn btn-success btn-lg px-5 shadow-sm">
+                                <span th:text="${publication.id == null ? 'Publier les travaux' : 'Mettre à jour'}">Publier</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div th:if="${publication == null}" class="alert alert-warning text-center py-5">
+        <i class="fa-solid fa-circle-exclamation fa-3x mb-3"></i>
+        <p class="font-bold">Publication introuvable ou erreur de chargement.</p>
+        <a href="/publications" class="btn btn-primary">Retour à la liste</a>
+    </div>
+</div>
+</body>
+</html>

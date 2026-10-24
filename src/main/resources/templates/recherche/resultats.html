@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Résultats de Recherche - LIAS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{layout/navbar :: menu}"></div>
+
+<div class="main-content">
+    <h3 class="fw-bold mb-4 text-dark"><i class="fa-solid fa-magnifying-glass me-2 text-primary"></i>Résultats pour : <span th:text="${query}" class="text-primary"></span></h3>
+
+    <!-- SECTION MEMBRES -->
+    <div class="mb-5" th:if="${not #lists.isEmpty(membres)}">
+        <h5 class="fw-bold border-bottom pb-2 mb-3"><i class="fa-solid fa-users me-2"></i>Chercheurs</h5>
+        <div class="row g-3">
+            <div class="col-md-4" th:each="m : ${membres}">
+                <div class="card p-3 border-0 shadow-sm bg-white d-flex flex-row align-items-center gap-3">
+                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;" th:text="${#strings.substring(m.prenom, 0, 1) + #strings.substring(m.nom, 0, 1)}"></div>
+                    <div>
+                        <a th:href="@{'/membres/details/' + ${m.id}}" class="fw-bold text-dark text-decoration-none" th:text="${m.prenom + ' ' + m.nom}"></a>
+                        <br><small class="text-muted" th:text="${m.statut}"></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION PUBLICATIONS -->
+    <div class="mb-5" th:if="${not #lists.isEmpty(publications)}">
+        <h5 class="fw-bold border-bottom pb-2 mb-3"><i class="fa-solid fa-book me-2"></i>Publications</h5>
+        <div class="list-group list-group-flush border rounded shadow-sm bg-white">
+            <div class="list-group-item p-3" th:each="p : ${publications}">
+                <h6 class="fw-bold mb-1" th:text="${p.titre}"></h6>
+                <small class="text-muted" th:text="${p.revue + ' (' + p.datePublication.year + ')'}"></small>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION ÉVÉNEMENTS -->
+    <div class="mb-5" th:if="${not #lists.isEmpty(evenements)}">
+        <h5 class="fw-bold border-bottom pb-2 mb-3"><i class="fa-solid fa-calendar me-2"></i>Événements</h5>
+        <div class="row g-3">
+            <div class="col-md-6" th:each="e : ${evenements}">
+                <div class="card p-3 border-0 shadow-sm bg-white">
+                    <span class="badge bg-light text-dark border mb-2 w-auto" style="width: fit-content;" th:text="${e.type}"></span>
+                    <h6 class="fw-bold mb-1" th:text="${e.titre}"></h6>
+                    <small class="text-muted" th:text="${e.dateEvenement}"></small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION DOCUMENTS -->
+    <div class="mb-5" th:if="${not #lists.isEmpty(documents)}">
+        <h5 class="fw-bold border-bottom pb-2 mb-3"><i class="fa-solid fa-file-pdf me-2"></i>Documents Archivés</h5>
+        <div class="row g-3">
+            <div class="col-md-6" th:each="d : ${documents}">
+                <div class="card p-3 border-0 shadow-sm bg-white">
+
+                    <!-- CAS 1 : Document public OU utilisateur autorisé (Pas un doctorant, pas un associé) -->
+                    <div th:if="${d.typeDocument.name() != 'ADMINISTRATIF' || (!#authorization.expression('hasRole(''DOCTORANT'')') && !#authorization.expression('hasRole(''ASSOCIE'')'))}">
+                        <h6 class="fw-bold mb-1" th:text="${d.titre}"></h6>
+                        <small class="text-muted"><i class="fa-solid fa-tag me-1"></i> <span th:text="${d.typeDocument}"></span></small>
+                        <div class="mt-2">
+                            <a th:href="@{'/api/files/view?path=' + ${d.cheminFichier}}" target="_blank" class="btn btn-sm btn-link p-0 text-decoration-none fw-bold">Consulter</a>
+                        </div>
+                    </div>
+
+                    <!-- CAS 2 : Document interne ET utilisateur restreint (Doctorant ou Associé) -->
+                    <div th:if="${d.typeDocument.name() == 'ADMINISTRATIF' && (#authorization.expression('hasRole(''DOCTORANT'')') || #authorization.expression('hasRole(''ASSOCIE'')'))}">
+                        <h6 class="fw-bold mb-1 text-secondary" th:text="${d.titre}"></h6>
+                        <div class="text-danger small fw-bold">
+                            <i class="fa-solid fa-lock me-1"></i> Accès restreint (Document Interne)
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+    <div th:if="${#lists.isEmpty(membres) && #lists.isEmpty(publications) && #lists.isEmpty(evenements) && #lists.isEmpty(documents)}" class="text-center py-5">
+        <i class="fa-solid fa-face-frown fa-3x text-muted mb-3 opacity-25"></i>
+        <h4 class="text-muted fw-bold">Aucun résultat trouvé</h4>
+        <p class="text-secondary">Essayez avec un autre mot-clé (nom, titre de publication, document...).</p>
+    </div>
+</div>
+</body>
+</html>

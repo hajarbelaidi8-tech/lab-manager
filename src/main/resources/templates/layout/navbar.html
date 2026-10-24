@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<div th:fragment="menu">
+    <style sec:authorize="isAuthenticated()">
+        .sidebar {
+            width: 320px !important;
+            background-color: #0f172a !important;
+            height: 100vh !important;
+            position: fixed !important;
+            top: 0; left: 0;
+            padding: 25px 15px !important;
+            z-index: 1050 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            overflow-y: auto !important;
+        }
+        .top-bar {
+            position: fixed;
+            top: 0;
+            left: 320px;
+            right: 0;
+            height: 70px;
+            background: white;
+            display: flex;
+            align-items: center;
+            padding: 0 40px;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .sidebar .nav-link {
+            color: #94a3b8 !important;
+            padding: 12px 15px !important;
+            border-radius: 10px !important;
+            margin-bottom: 5px !important;
+            transition: all 0.3s !important;
+            font-weight: 500 !important;
+        }
+        .sidebar .nav-link:hover {
+            background: rgba(255,255,255,0.05) !important;
+            color: white !important;
+        }
+        .sidebar .nav-link.active {
+            background-color: #059669 !important;
+            color: white !important;
+            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3) !important;
+        }
+        .sidebar .nav-link i { width: 25px; }
+        .sidebar::-webkit-scrollbar { width: 4px; }
+        .sidebar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        .main-content { margin-top: 70px !important; margin-left: 320px !important; }
+    </style>
+
+    <style sec:authorize="!isAuthenticated()">
+        .main-content { margin-top: 20px !important; margin-left: 0 !important; padding: 0 20px; }
+    </style>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar shadow" sec:authorize="isAuthenticated()">
+        <div class="text-center mb-4">
+            <h4 class="fw-bold text-white">LIAS <span style="color:#059669">Lab</span></h4>
+        </div>
+
+        <div class="sidebar-user mb-4" style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px; display: flex; align-items: center; gap: 12px; border: 1px solid rgba(255,255,255,0.05);">
+            <div style="width: 45px; height: 45px; background: #059669; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white;"
+                 th:text="${#strings.substring((currentUser?.prenom ?: 'A'), 0, 1) + #strings.substring((currentUser?.nom ?: 'D'), 0, 1)}">DA</div>
+            <div style="overflow: hidden;">
+                <span style="display: block; color: white; font-weight: 600; font-size: 0.85rem;" th:text="${currentUser?.prenom + ' ' + currentUser?.nom}">User</span>
+                <span style="color: #64748b; font-size: 0.7rem;" th:text="${currentUser?.role}">Role</span>
+            </div>
+        </div>
+
+        <nav class="nav flex-column" id="sidebar-nav">
+            <a href="/dashboard" class="nav-link"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
+            <a href="/membres" class="nav-link"><i class="fa-solid fa-users"></i> Chercheurs</a>
+            <a href="/profil" class="nav-link"><i class="fa-solid fa-user-circle"></i> Mon Profil</a>
+            <a href="/publications" class="nav-link"><i class="fa-solid fa-book"></i> Publications</a>
+            <a href="/evenements" class="nav-link"><i class="fa-solid fa-calendar"></i> Événements</a>
+            <a href="/communication/mur" class="nav-link"><i class="fa-solid fa-comments"></i> Communication</a>
+            <a href="/archives" class="nav-link"><i class="fa-solid fa-box-archive"></i> Archives</a>
+            <a href="/evenements/calendrier" class="nav-link"><i class="fa-solid fa-timeline"></i> Calendrier</a>
+
+            <!-- Restrictions Matériel -->
+            <a th:if="${currentUser?.statut != T(ma.fsm.lab_manager.entities.StatutMembre).DOCTORANT && currentUser?.statut != T(ma.fsm.lab_manager.entities.StatutMembre).ASSOCIE}"
+               href="/materiel" class="nav-link"><i class="fa-solid fa-microscope"></i> Matériel</a>
+
+            <a sec:authorize="hasAnyRole('DIRECTEUR', 'CHEF_EQUIPE')" href="/reunions" class="nav-link"><i class="fa-solid fa-comments"></i> Réunions</a>
+
+            <!-- Restrictions Gouvernance -->
+            <a sec:authorize="hasRole('DIRECTEUR')"
+               th:if="${currentUser?.statut != T(ma.fsm.lab_manager.entities.StatutMembre).DOCTORANT && currentUser?.statut != T(ma.fsm.lab_manager.entities.StatutMembre).ASSOCIE}"
+               href="/gouvernance/conventions" class="nav-link"><i class="fa-solid fa-file-contract"></i> Conventions</a>
+
+            <a sec:authorize="hasRole('DIRECTEUR')" href="/directeur/demandes" class="nav-link"><i class="fa-solid fa-user-plus"></i> Adhésions</a>
+            <!-- L-khidma d l-Admin (Paramétrage) -->
+            <a sec:authorize="hasRole('ADMIN')" href="/admin/settings" class="nav-link">
+                <i class="fa-solid fa-gears"></i> Paramètres Labo
+            </a>
+
+            <!-- Hada howa l-bouton jdid li bghiti f jnab -->
+            <a sec:authorize="hasRole('ADMIN')" href="/admin/audit" class="nav-link">
+                <i class="fa-solid fa-shield-halved"></i> Journal d'Audit
+            </a>
+
+            <hr style="border-color: rgba(255,255,255,0.1)">
+            <a sec:authorize="hasRole('DIRECTEUR')" href="/rapport" class="nav-link text-warning"><i class="fa-solid fa-star"></i> Rapport Annuel</a>
+        </nav>
+
+        <div class="mt-auto">
+            <form th:action="@{/logout}" method="post">
+                <button type="submit" class="btn btn-link nav-link text-danger w-100 text-start border-0"><i class="fa-solid fa-sign-out-alt"></i> Déconnexion</button>
+            </form>
+        </div>
+    </aside>
+
+    <!-- TOP BAR -->
+    <div class="top-bar" sec:authorize="isAuthenticated()">
+        <!-- RECHERCHE GLOBALE (Section 18) -->
+        <form th:action="@{/recherche}" method="get" class="me-auto" style="width: 400px;">
+            <div class="input-group bg-light rounded-pill px-3 py-1">
+                <span class="input-group-text bg-transparent border-0 text-muted"><i class="fa-solid fa-search"></i></span>
+                <input type="text" name="q" class="form-control bg-transparent border-0 shadow-none" placeholder="Chercher un membre, une publication, un document...">
+            </div>
+        </form>
+
+        <div class="d-flex align-items-center gap-4">
+            <!-- DROPDOWN NOTIFICATIONS (Section 19) -->
+            <div class="dropdown">
+                <div class="position-relative cursor-pointer" data-bs-toggle="dropdown" aria-expanded="false" id="notifDropdown">
+                    <i class="fa-solid fa-bell fs-5 text-muted"></i>
+                    <span th:if="${nbNotifs > 0}" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                          style="font-size: 0.6rem;" th:text="${nbNotifs}">0</span>
+                </div>
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0 p-0 mt-3" aria-labelledby="notifDropdown" style="width: 320px; border-radius: 12px; overflow: hidden;">
+                    <li class="p-3 bg-light border-bottom d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0 fw-bold">Notifications</h6>
+                        <a th:if="${nbNotifs > 0}" th:href="@{/notifications/tout-lire}" class="text-[10px] text-primary text-decoration-none fw-bold">
+                            <i class="fa-solid fa-check-double"></i> Tout lire
+                        </a>
+                    </li>
+                    <div style="max-height: 350px; overflow-y: auto;">
+                        <li th:each="n : ${notifications}" th:classappend="${!n.lue ? 'bg-slate-50' : ''}" class="p-3 border-bottom position-relative hover-bg-light">
+                            <a th:href="@{'/notifications/marquer-lue/' + ${n.id}}" class="stretched-link"></a>
+                            <div class="d-flex gap-2">
+                                <div th:if="${!n.lue}" class="mt-1"><span class="d-inline-block bg-primary rounded-circle" style="width: 8px; height: 8px;"></span></div>
+                                <div>
+                                    <div class="small fw-bold text-dark mb-1" th:text="${n.titre}">Titre</div>
+                                    <div class="small text-muted" style="font-size: 0.75rem;" th:text="${n.message}">Message</div>
+                                    <div class="text-slate-400 mt-1" style="font-size: 0.65rem;">
+                                        <i class="fa-regular fa-clock me-1"></i> <span th:text="${#temporals.format(n.dateCreation, 'dd/MM HH:mm')}">Date</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                        <li th:if="${#lists.isEmpty(notifications)}" class="p-4 text-center text-muted small">
+                            <i class="fa-solid fa-bell-slash d-block mb-2 fs-4 opacity-25"></i>
+                            Aucune notification pour le moment.
+                        </li>
+                    </div>
+                </ul>
+            </div>
+
+            <div class="text-end d-none d-md-block">
+                <span class="d-block fw-bold small" th:text="${currentUser?.prenom + ' ' + currentUser?.nom}"></span>
+                <span class="badge bg-success" style="font-size: 0.6rem;" th:text="${currentUser?.role}"></span>
+            </div>
+            <!-- 5.1 Maintenance & Audit (Admin bo7dou ⭐) -->
+            
+        </div>
+    </div>
+
+    <!-- SCRIPTS JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+
+    <script th:inline="javascript">
+        document.addEventListener("DOMContentLoaded", function() {
+            // Détection du lien actif dans la sidebar
+            const path = window.location.pathname;
+            document.querySelectorAll('#sidebar-nav .nav-link').forEach(link => {
+                if (link.getAttribute('href') === path) link.classList.add('active');
+            });
+
+            // Logique WebSockets pour les Notifications Réelles
+            var socket = new SockJS('/ws-lab');
+            var stompClient = Stomp.over(socket);
+            var userEmail = /*[[${currentUser?.email}]]*/ 'user@example.com';
+
+            stompClient.connect({}, function (frame) {
+                stompClient.subscribe('/user/' + userEmail + '/queue/notifications', function (notification) {
+                    showNotification(JSON.parse(notification.body));
+                });
+            });
+
+            function showNotification(notif) {
+                const badge = document.querySelector('#notifDropdown .badge');
+                let count = parseInt(badge?.innerText || '0') + 1;
+                if (badge) { badge.innerText = count; }
+                else {
+                    const span = document.createElement('span');
+                    span.className = 'position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger';
+                    span.style.fontSize = '0.6rem';
+                    span.innerText = '1';
+                    document.querySelector('#notifDropdown').appendChild(span);
+                }
+                // Optionnel : Alert sound or Toast here
+                console.log("Nouvelle notification reçue !");
+            }
+        });
+    </script>
+</div>
+</html>

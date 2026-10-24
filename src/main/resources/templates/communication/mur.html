@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Mur de Communication - LIAS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{layout/navbar :: menu}"></div>
+
+<div class="main-content">
+    <div class="row">
+        <!-- SIDEBAR ROOMS (Section 13) -->
+        <div class="col-lg-3">
+            <div class="sticky-top" style="top: 100px;">
+                <div class="bg-white rounded-4 shadow-sm p-4 mb-4 border border-slate-100">
+                    <h5 class="fw-bold mb-4 text-slate-800 flex items-center">
+                        <i class="fa-solid fa-door-open text-emerald-600 me-2"></i>
+                        Mes Salons
+                    </h5>
+                    
+                    <div class="space-y-2">
+                        <a th:href="@{/communication/mur}" 
+                           class="d-flex align-items-center p-2 rounded-3 text-decoration-none transition-all"
+                           th:classappend="${currentEvent == null && currentEquipe == null ? 'bg-emerald-50 text-emerald-700 fw-bold' : 'text-slate-500 hover:bg-slate-50'}">
+                            <i class="fa-solid fa-globe me-3"></i> Salon Public
+                        </a>
+
+                        <div th:if="${currentUser.equipe != null}">
+                            <div class="text-[10px] text-slate-400 uppercase font-bold tracking-widest mt-4 mb-2 ms-2">Mon Équipe</div>
+                            <a th:href="@{/communication/mur(equipeId=${currentUser.equipe.id})}" 
+                               class="d-flex align-items-center p-2 rounded-3 text-decoration-none transition-all"
+                               th:classappend="${currentEquipe?.id == currentUser.equipe.id ? 'bg-blue-50 text-blue-700 fw-bold' : 'text-slate-500 hover:bg-slate-50'}">
+                                <i class="fa-solid fa-users-viewfinder me-3"></i> 
+                                <span th:text="${currentUser.equipe.nom}">Équipe</span>
+                            </a>
+                        </div>
+
+                        <div class="text-[10px] text-slate-400 uppercase font-bold tracking-widest mt-4 mb-2 ms-2">Événements (Orga)</div>
+                        <a th:each="ev : ${evenements}" 
+                           th:href="@{/communication/mur(eventId=${ev.id})}" 
+                           class="d-flex align-items-center p-2 rounded-3 text-decoration-none transition-all mb-1"
+                           th:classappend="${currentEvent?.id == ev.id ? 'bg-amber-50 text-amber-700 fw-bold' : 'text-slate-500 hover:bg-slate-50'}">
+                            <i class="fa-solid fa-calendar-check me-3"></i>
+                            <span class="text-truncate" th:text="${ev.titre}">Event</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <!-- HEADER SALON -->
+            <div class="mb-4">
+                <h2 class="fw-bold text-slate-800" th:if="${currentEvent == null && currentEquipe == null}">Salon Public du Labo</h2>
+                <h2 class="fw-bold text-blue-700" th:if="${currentEquipe != null}">
+                    <i class="fa-solid fa-lock me-2"></i> 
+                    Room Privée : <span th:text="${currentEquipe.nom}">Équipe</span>
+                </h2>
+                <h2 class="fw-bold text-amber-600" th:if="${currentEvent != null}">
+                    <i class="fa-solid fa-comments me-2"></i> 
+                    Chat Organisateur : <span th:text="${currentEvent.titre}">Event</span>
+                </h2>
+                <p class="text-slate-500 small" th:if="${currentEquipe != null}">Seuls les membres de votre équipe peuvent voir ces messages.</p>
+                <p class="text-slate-500 small" th:if="${currentEvent != null}">Fil de discussion dédié à la logistique de cet événement.</p>
+            </div>
+
+            <!-- ZONE DE POST (Section 13 PDF) -->
+            <div class="card border-0 shadow-sm p-4 mb-5 bg-white rounded-4 border-t-4"
+                 th:classappend="${currentEquipe != null ? 'border-blue-500' : (currentEvent != null ? 'border-amber-500' : 'border-emerald-500')}">
+                <form th:action="@{/communication/poster}" method="post">
+                    <!-- Champs cachés pour conserver le contexte -->
+                    <input type="hidden" name="equipeId" th:value="${currentEquipe?.id}">
+                    <input type="hidden" name="eventId" th:value="${currentEvent?.id}">
+                    
+                    <div class="mb-3">
+                        <textarea name="contenu" class="form-control border-0 bg-slate-50 p-3" rows="3" placeholder="Tapez votre message ici..." required></textarea>
+                    </div>
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="btn px-4 rounded-pill shadow-sm fw-bold"
+                                th:classappend="${currentEquipe != null ? 'btn-primary' : (currentEvent != null ? 'btn-warning text-white' : 'btn-success')}">
+                            Envoyer
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- LISTE DES MESSAGES -->
+            <div class="messages">
+                <div class="card border-0 shadow-sm mb-3 bg-white p-4" th:each="m : ${messages}">
+                    <div class="d-flex align-items-start gap-3">
+                        <div class="bg-info text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 45px; height: 45px; font-weight: bold;"
+                             th:text="${#strings.substring(m.expediteur.prenom, 0, 1) + #strings.substring(m.expediteur.nom, 0, 1)}"></div>
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-bold text-dark" th:text="${m.expediteur.prenom + ' ' + m.expediteur.nom}">Auteur</span>
+                                <small class="text-muted" th:text="${#temporals.format(m.dateEnvoi, 'dd/MM HH:mm')}"></small>
+                            </div>
+                            <div class="mb-2">
+                                <span th:if="${m.equipe == null}" class="badge bg-secondary rounded-pill small" style="font-size: 0.6rem;">PUBLIC</span>
+                                <span th:if="${m.equipe != null}" class="badge bg-primary rounded-pill small" style="font-size: 0.6rem;" th:text="${m.equipe.acronyme}">EQUIPE</span>
+                            </div>
+                            <p class="mb-0 text-secondary" style="white-space: pre-line;" th:text="${m.contenu}"></p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div th:if="${messages.isEmpty()}" class="text-center py-5">
+                    <i class="fa-solid fa-message-slash fa-3x text-light mb-3"></i>
+                    <p class="text-muted">Aucun message pour le moment.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

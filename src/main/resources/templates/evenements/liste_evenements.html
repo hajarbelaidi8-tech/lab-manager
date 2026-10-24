@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>Événements Scientifiques - LIAS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div th:replace="~{layout/navbar :: menu}"></div>
+
+<div class="main-content">
+    <div class="card p-4 border-0 shadow-sm mb-5 bg-white">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h3 class="fw-bold mb-1 text-dark"><i class="fa-solid fa-calendar-days me-2 text-success"></i>Calendrier Scientifique</h3>
+                <!-- FILTRE ARCHIVAGE (Section 9 PDF) -->
+                <form th:action="@{/evenements}" method="get" class="d-flex align-items-center gap-2 mt-2">
+                    <label class="small text-muted fw-bold">Filtrer par Édition :</label>
+                    <select name="annee" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+                        <option value="">Toutes</option>
+                        <option th:each="y : ${#numbers.sequence(2024, 2026)}" th:value="${y}" th:text="${y}" th:selected="${param.annee != null && param.annee[0] == y.toString()}"></option>
+                    </select>
+                </form>
+            </div>
+            <a th:if="${currentUser?.statut != T(ma.fsm.lab_manager.entities.StatutMembre).DOCTORANT && currentUser?.statut != T(ma.fsm.lab_manager.entities.StatutMembre).ASSOCIE}" 
+               href="/evenements/nouveau" class="btn btn-primary"><i class="fa-solid fa-plus me-2"></i>Organiser</a>
+        </div>
+
+        <div class="row g-4">
+            <!-- Boucle s7i7a f l-DIV nit -->
+            <div class="col-md-6 col-lg-4" th:each="e : ${evenements}">
+                <div class="card h-100 border shadow-sm hover-shadow">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="badge bg-light text-dark border" th:text="${e.type}">TYPE</span>
+                            <small class="text-muted" th:text="${e.dateEvenement != null ? #temporals.format(e.dateEvenement, 'dd/MM/yyyy') : 'Date non définie'}">DATE</small>
+                        </div>
+                        <h5 class="card-title fw-bold" th:text="${e.titre}">TITRE</h5>
+                        <p class="card-text text-secondary small" th:text="${e.description}">Description</p>
+                        <div class="mt-3"><small th:text="${e.lieu}">LIEU</small></div>
+                    </div>
+                    <div class="card-footer bg-transparent border-top-0 pb-3 d-flex gap-2">
+                        <a th:href="@{'/evenements/details/' + ${e.id}}" class="btn btn-sm btn-outline-primary flex-grow-1">Détails</a>
+
+                        <!-- BOUTON SUPPRIMER DIRECTEUR ⭐ -->
+                        <!-- On autorise le Directeur ET l'Admin -->
+                        <th:block sec:authorize="hasAnyRole('DIRECTEUR', 'ADMIN')">
+                            <a th:href="@{'/evenements/supprimer/' + ${e.id}}" class="btn btn-sm btn-outline-danger"
+                               onclick="return confirm('Supprimer cet événement ?')">Supprimer</a>
+                        </th:block>
+                        <th:block sec:authorize="hasRole('DIRECTEUR')">
+                        <a th:href="@{'/evenements/editer/' + ${e.id}}" class="btn btn-sm btn-outline-warning">Modifier</a>
+                        </th:block>
+                    </div>
+                </div>
+            </div>
+
+            <div th:if="${evenements.isEmpty()}" class="col-12 text-center py-5">
+                <p class="text-muted">Aucun événement programmé.</p>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
